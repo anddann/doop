@@ -9,12 +9,12 @@ import java.util.Set;
 import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
-import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+import soot.jimple.infoflow.android.resources.LayoutFileParser;
+import soot.jimple.infoflow.android.resources.LayoutControl;
 
 public class AndroidManifestAXML implements AndroidManifest {
     private ProcessManifest pm;
-    private DirectLayoutFileParser lfp;
+    private LayoutFileParser lfp;
     private ARSCFileParser resParser;
     private String apkLocation;
 
@@ -61,8 +61,8 @@ public class AndroidManifestAXML implements AndroidManifest {
         String packageName = getPackageName();
         if (packageName == null)
             throw new RuntimeException("getCallbackMethods(): No package name.");
-        lfp = new DirectLayoutFileParser(packageName, resParser);
-        lfp.registerLayoutFilesDirect(apkLocation);
+        lfp = new LayoutFileParser(packageName, resParser);
+        lfp.parseLayoutFileDirect(apkLocation);
         lfp.parseLayoutFileDirect(apkLocation);
     }
 
@@ -72,20 +72,20 @@ public class AndroidManifestAXML implements AndroidManifest {
 
         // Collect results.
         Set<String> ret = new HashSet<>();
-        for (Set<String> callbackMethods : lfp.getCallbackMethods().values())
-            ret.addAll(callbackMethods);
+/*        for (Set<String> callbackMethods : lfp.getCallbackMethods().values())
+            ret.addAll(callbackMethods);*/
         return ret;
     }
 
-    public Set<PossibleLayoutControl> getUserControls() throws IOException {
+    public Set<LayoutControl> getUserControls() throws IOException {
         if (lfp == null)
             initLayoutFileParser();
 
         // Collect results.
-        Set<PossibleLayoutControl> ret = new HashSet<>();
-        for (Set<PossibleLayoutControl> possibleLayoutControls : lfp.getUserControls().values()) {
+        Set<LayoutControl> ret = new HashSet<>();
+       /* for (Set<LayoutControl> possibleLayoutControls : lfp.getUserControls().values()) {
             ret.addAll(possibleLayoutControls);
-        }
+        }*/
         return ret;
     }
 }

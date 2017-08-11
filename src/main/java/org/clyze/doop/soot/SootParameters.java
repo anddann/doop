@@ -24,4 +24,7 @@ public class SootParameters {
      boolean _uniqueFacts = false;
      boolean _generateJimple = false;
      boolean _toStdout = false;
+     //FIXME: added
+     boolean _moduleMode = false;
+     String _moduleName = null;
 }

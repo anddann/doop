@@ -256,6 +256,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.UNIQUE_FACTS.value) {
             params += ["--uniqueFacts"]
         }
+        if(options.MODULEMODE.value){
+            params+=["--modulemode"]
+        }
+        if(options.MODULENAME.value){
+            params+=["--modulename", options.MODULENAME.value.toString()]
+        }
 
         params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
 

@@ -37,7 +37,7 @@ class FactWriter {
         String raw = FactEncoders.encodeStringConstant(constant);
 
         String result;
-        if(raw.length() <= 256)
+        if (raw.length() <= 256)
             result = raw;
         else
             result = "<<HASH:" + raw.hashCode() + ">>";
@@ -80,8 +80,7 @@ class FactWriter {
         String classStr = c.getName();
         if (c.isInterface()) {
             _db.add(INTERFACE_TYPE, classStr);
-        }
-        else {
+        } else {
             _db.add(CLASS_TYPE, classStr);
         }
         _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
@@ -110,13 +109,11 @@ class FactWriter {
             _db.add(ARRAY_TYPE, result);
             Type componentType = ((ArrayType) t).getElementType();
             _db.add(COMPONENT_TYPE, result, writeType(componentType));
-        }
-        else if (t instanceof PrimType || t instanceof NullType ||
-                 t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
+        } else if (t instanceof PrimType || t instanceof NullType ||
+                t instanceof RefType || t instanceof VoidType || t instanceof BottomType) {
             // taken care of by the standard facts
             ;
-        }
-        else {
+        } else {
             throw new RuntimeException("Don't know what to do with type " + t);
         }
 
@@ -182,7 +179,7 @@ class FactWriter {
             if (sizeVal instanceof IntConstant) {
                 IntConstant size = (IntConstant) sizeVal;
 
-                if(size.value == 0)
+                if (size.value == 0)
                     _db.add(EMPTY_ARRAY, heap);
             }
         }
@@ -218,7 +215,7 @@ class FactWriter {
      * be allocated separately for every dimension of the array.
      */
     void writeAssignNewMultiArrayExpr(SootMethod m, Stmt stmt, Local l, NewMultiArrayExpr expr, Session session) {
-        writeAssignNewMultiArrayExprHelper(m, stmt, l, _rep.local(m,l), expr, (ArrayType) expr.getType(), session);
+        writeAssignNewMultiArrayExprHelper(m, stmt, l, _rep.local(m, l), expr, (ArrayType) expr.getType(), session);
     }
 
     void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) {
@@ -339,14 +336,13 @@ class FactWriter {
            types seem to have been translated to a syntax with the initial
            L, but arrays are still represented as [, for example [C for
            char[] */
-        if (s.charAt(0) == '[' || (s.charAt(0) == 'L' && s.endsWith(";")) ) {
+        if (s.charAt(0) == '[' || (s.charAt(0) == 'L' && s.endsWith(";"))) {
             // array type
             Type t = soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(s);
 
             heap = _rep.classConstant(t);
             actualType = t.toString();
-        }
-        else {
+        } else {
 //            SootClass c = soot.Scene.v().getSootClass(s);
 //            if (c == null) {
 //                throw new RuntimeException("Unexpected class constant: " + constant);
@@ -475,8 +471,7 @@ class FactWriter {
         String type = c.getName();
         if (c.isInterface()) {
             _db.add(INTERFACE_TYPE, type);
-        }
-        else {
+        } else {
             _db.add(CLASS_TYPE, type);
         }
         _db.add(CLASS_MODIFIER, modifier, type);
@@ -509,7 +504,7 @@ class FactWriter {
         String methodId = writeMethod(m);
 
         if (!(m.getReturnType() instanceof VoidType)) {
-            String  var = _rep.nativeReturnVar(m);
+            String var = _rep.nativeReturnVar(m);
             _db.add(NATIVE_RETURN_VAR, var, methodId);
             _db.add(VAR_TYPE, var, writeType(m.getReturnType()));
             _db.add(VAR_DECLARING_METHOD, var, methodId);
@@ -559,7 +554,7 @@ class FactWriter {
 
         Value v = writeImmediate(inMethod, stmt, stmt.getKey(), session);
 
-        if(!(v instanceof Local))
+        if (!(v instanceof Local))
             throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
 
         Local l = (Local) v;
@@ -586,7 +581,7 @@ class FactWriter {
 
         Value v = writeImmediate(inMethod, stmt, stmt.getKey(), session);
 
-        if(!(v instanceof Local))
+        if (!(v instanceof Local))
             throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
 
         Local l = (Local) v;
@@ -595,7 +590,7 @@ class FactWriter {
 
         _db.add(LOOKUP_SWITCH, insn, str(stmtIndex), _rep.local(inMethod, l), methodId);
 
-        for(int i = 0, end = stmt.getTargetCount(); i < end; i++) {
+        for (int i = 0, end = stmt.getTargetCount(); i < end; i++) {
             int tgIndex = stmt.getLookupValue(i);
             session.calcUnitNumber(stmt.getTarget(i));
             int indexTo = session.getUnitNumber(stmt.getTarget(i));
@@ -655,8 +650,7 @@ class FactWriter {
 
             if (right instanceof CaughtExceptionRef && left instanceof Local) {
                 caught = (Local) left;
-            }
-            else {
+            } else {
                 throw new RuntimeException("Unexpected start of exception handler: " + handlerUnit);
             }
         }
@@ -709,7 +703,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$stringconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"), -1, -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"));
         writeLocal(inMethod, l);
         writeAssignStringConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -719,7 +713,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$null";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, type, -1, -1);
+        Local l = new JimpleLocal(varname, type);
         writeLocal(inMethod, l);
         writeAssignNull(inMethod, stmt, l, session);
         return l;
@@ -729,7 +723,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$numconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, constant.getType(), -1, -1);
+        Local l = new JimpleLocal(varname, constant.getType());
         writeLocal(inMethod, l);
         writeAssignNumConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -739,7 +733,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$classconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"), -1, -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"));
         writeLocal(inMethod, l);
         writeAssignClassConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -749,59 +743,55 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$mhandleconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.invoke.MethodHandle"), -1, -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.invoke.MethodHandle"));
         writeLocal(inMethod, l);
         writeAssignMethodHandleConstant(inMethod, stmt, l, constant, session);
         return l;
     }
 
     private Value writeActualParam(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session, Value v, int idx) {
-	if (v instanceof StringConstant)
-	    return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
-	else if (v instanceof ClassConstant)
-	    return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
-	else if (v instanceof NumericConstant)
-	    return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
-	else if (v instanceof MethodHandle)
-	    return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
-	else if (v instanceof NullConstant) {
-	    // Giving the type of the formal argument to be used in the creation of
-	    // temporary var for the actual argument (whose value is null).
-	    Type argType = expr.getMethodRef().parameterType(idx);
-	    return writeNullExpression(inMethod, stmt, argType, session);
-	}
-	else if (v instanceof Constant)
-	    throw new RuntimeException("Value has unknown constant type: " + v);
-	return v;
+        if (v instanceof StringConstant)
+            return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
+        else if (v instanceof ClassConstant)
+            return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
+        else if (v instanceof NumericConstant)
+            return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
+        else if (v instanceof MethodHandle)
+            return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
+        else if (v instanceof NullConstant) {
+            // Giving the type of the formal argument to be used in the creation of
+            // temporary var for the actual argument (whose value is null).
+            Type argType = expr.getMethodRef().parameterType(idx);
+            return writeNullExpression(inMethod, stmt, argType, session);
+        } else if (v instanceof Constant)
+            throw new RuntimeException("Value has unknown constant type: " + v);
+        return v;
     }
 
     private void writeActualParams(SootMethod inMethod, Stmt stmt, InvokeExpr expr, String invokeExprRepr, Session session) {
-        for(int i = 0; i < expr.getArgCount(); i++) {
+        for (int i = 0; i < expr.getArgCount(); i++) {
             Value v = writeActualParam(inMethod, stmt, expr, session, expr.getArg(i), i);
 
             if (v instanceof Local) {
                 Local l = (Local) v;
                 _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
-            }
-            else {
+            } else {
                 throw new RuntimeException("Actual parameter is not a local: " + v + " " + v.getClass());
             }
         }
         if (expr instanceof DynamicInvokeExpr) {
-            DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
+            DynamicInvokeExpr di = (DynamicInvokeExpr) expr;
             for (int j = 0; j < di.getBootstrapArgCount(); j++) {
                 Value v = di.getBootstrapArg(j);
                 if (v instanceof Constant) {
-                    Value vConst = writeActualParam(inMethod, stmt, expr, session, (Value)v, j);
+                    Value vConst = writeActualParam(inMethod, stmt, expr, session, (Value) v, j);
                     if (vConst instanceof Local) {
                         Local l = (Local) vConst;
                         _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));
-                    }
-                    else {
+                    } else {
                         throw new RuntimeException("Unknown actual parameter: " + v + " of type " + v.getClass().getName());
                     }
-                }
-                else {
+                } else {
                     throw new RuntimeException("Found non-constant argument to bootstrap method: " + di);
                 }
             }
@@ -826,20 +816,16 @@ class FactWriter {
 
         if (expr instanceof StaticInvokeExpr) {
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), methodId);
-        }
-        else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr) {
+        } else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr) {
             _db.add(VIRTUAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
-        }
-        else if (expr instanceof SpecialInvokeExpr) {
+        } else if (expr instanceof SpecialInvokeExpr) {
             _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
-        }
-        else if (expr instanceof DynamicInvokeExpr) {
-            DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
+        } else if (expr instanceof DynamicInvokeExpr) {
+            DynamicInvokeExpr di = (DynamicInvokeExpr) expr;
             SootMethodRef dynInfo = di.getMethodRef();
             String dynArity = String.valueOf(dynInfo.parameterTypes().size());
             _db.add(DYNAMIC_METHOD_INV, insn, str(index), _rep.signature(di.getBootstrapMethodRef().resolve()), dynInfo.name(), dynInfo.returnType().toString(), dynArity, dynInfo.parameterTypes().toString(), methodId);
-        }
-        else {
+        } else {
             throw new RuntimeException("Cannot handle invoke expr: " + expr);
         }
 
@@ -885,8 +871,7 @@ class FactWriter {
 
         if (right instanceof LengthExpr) {
             _db.add(ASSIGN_OPER_TYPE, insn, " lenght ");
-        }
-        else if (right instanceof NegExpr) {
+        } else if (right instanceof NegExpr) {
             _db.add(ASSIGN_OPER_TYPE, insn, " !");
         }
 
@@ -928,7 +913,9 @@ class FactWriter {
         _db.add(BREAKPOINT_STMT, insn, str(index), methodId);
     }
 
-    void writeApplication(String applicationName) { _db.add(ANDROID_APPLICATION, applicationName); }
+    void writeApplication(String applicationName) {
+        _db.add(ANDROID_APPLICATION, applicationName);
+    }
 
     void writeActivity(String activity) {
         _db.add(ACTIVITY, activity);
@@ -960,17 +947,19 @@ class FactWriter {
 
     void writeFieldInitialValue(SootField f) {
         String fieldId = _rep.signature(f);
-        String valueString = f.getInitialValueString();
+        //FIXME: no idea what this (should) do
+        //  String valueString = f.getInitialValueString();
+        String valueString = null;
         if (valueString != null && !valueString.equals("")) {
             int pos = valueString.indexOf('@');
             if (pos < 0)
                 System.err.println("Unexpected format (no @) in initial field value");
             else {
                 try {
-                    int value = (int) Long.parseLong(valueString.substring(pos+1), 16); // parse hex string, possibly negative int
+                    int value = (int) Long.parseLong(valueString.substring(pos + 1), 16); // parse hex string, possibly negative int
                     _db.add(FIELD_INITIAL_VALUE, fieldId, Integer.toString(value));
                 } catch (NumberFormatException e) {
-                    _db.add(FIELD_INITIAL_VALUE, fieldId, valueString.substring(pos+1));
+                    _db.add(FIELD_INITIAL_VALUE, fieldId, valueString.substring(pos + 1));
                     // if we failed to parse the value as a hex int, output it in full
                 }
             }

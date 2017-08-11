@@ -58,6 +58,21 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: true
 			),
 			new AnalysisOption<String>(
+					id: "MODULENAME",
+					name: "modulename",
+					argName: "MODULENAME",
+					description: "The name of the module.",
+					value: null,
+					webUI: true
+			),
+			new BooleanAnalysisOption(
+					id: "MODULEMODE",
+					name: "modulemode",
+					value: false,
+					webUI: true,
+					isAdvanced: true
+			),
+			new AnalysisOption<String>(
 					id: "INPUTS",
 					name: "inputFiles",
 					argName: "FILES",

@@ -4,7 +4,7 @@ package org.clyze.doop.soot.android;
 
 import java.io.IOException;
 import java.util.Set;
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+import soot.jimple.infoflow.android.resources.LayoutControl;
 
 public interface AndroidManifest {
     String getApplicationName();
@@ -14,7 +14,7 @@ public interface AndroidManifest {
     Set<String> getProviders();
     Set<String> getReceivers();
     Set<String> getCallbackMethods() throws IOException;
-    Set<PossibleLayoutControl> getUserControls() throws IOException;
+    Set<LayoutControl> getUserControls() throws IOException;
 
     // Adapted from Soot's ProcessManifest.
     default String expandClassName(String className) {

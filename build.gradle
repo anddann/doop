@@ -35,11 +35,22 @@ task wrapper(type: Wrapper) {
 repositories {
     mavenLocal()
 
+
     mavenCentral()
 
     maven {
         url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
     }
+
+    maven {
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot/"
+    }
+
+    maven{
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release/"
+    }
+
+
 }
 
 task printClasspath {
@@ -57,6 +68,11 @@ configurations.all {
 
 dependencies {
 
+         //runtime, compile dependencies pulled from repositories
+    //dos not work
+        runtime files("/opt/jdk-9ex/lib/jrt-fs.jar")
+
+
     compile "org.clyze:clue-common:2.1.+",
             "org.clyze:deepdoop:0.9.+",
             "org.codehaus.groovy:groovy-all:2.4.7",             // Groovy
@@ -65,18 +81,21 @@ dependencies {
             "commons-cli:commons-cli:1.2",                      // Command line processor
             "commons-io:commons-io:2.4",                        // File Utils
             "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
-            "org.ow2.asm:asm-debug-all:5.1",                    // Java Bytecode library
+            "org.ow2.asm:asm-debug-all:6.0_BETA",                    // Java Bytecode library
             "org.smali:dexlib2:2.2b4",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
             // Soot is a compile time dependency
-            "ext:AXMLPrinter:2.0"
+            "ca.mcgill.sable:axmlprinter:2016-07-27"
+            "axml:axml:2.0"
 
 
     // Soot is a compile time dependency
     compile 'ext:AXMLPrinter:2.0',
-            "ext:sootclasses:3.2.+",
-            "ext:soot-infoflow:1.2.+",
-            "ext:soot-infoflow-android:1.2.+"
+            "ca.mcgill.sable:soot-j9:3.0.+",
+            "de.tud.sse:soot-infoflow:2.0.+",
+            "de.tud.sse:soot-infoflow-android:2.0.+"
+
+    //compile files('./libs/soot-trunk-j9.jar')
 
     compile(group: "sun", name: "jhat", version: "PATCHED")
 

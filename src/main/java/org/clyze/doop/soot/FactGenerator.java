@@ -2,9 +2,11 @@ package org.clyze.doop.soot;
 
 import soot.*;
 import soot.jimple.*;
+import soot.options.Options;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -96,7 +98,21 @@ class FactGenerator implements Runnable {
             } while (!success);
 
             if (_generateJimple) {
-                PackManager.v().writeClass(_sootClass);
+                //FIXME: added this here
+               // PackManager.v().writeClass(_sootClass);
+              try {
+                  String fileName = SourceLocator.v().getFileNameFor(_sootClass, Options.output_format_jimple);
+                  OutputStream streamOut = new FileOutputStream(fileName);
+                  PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
+                  Printer.v().printTo(_sootClass, writerOut);
+                  writerOut.flush();
+                  streamOut.close();
+              }
+              catch (FileNotFoundException e) {
+                  e.printStackTrace();
+              } catch (IOException e) {
+                  e.printStackTrace();
+              }
                 for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
                     m.releaseActiveBody();
                 }

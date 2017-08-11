@@ -1,22 +1,31 @@
 package org.clyze.doop.soot;
 
+import com.google.common.base.*;
+import com.google.common.base.Optional;
+import heros.solver.CountingThreadPoolExecutor;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.objectweb.asm.ClassReader;
 import soot.*;
+import soot.JastAddJ.Opt;
 import soot.SourceLocator.FoundFile;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+import soot.jimple.infoflow.android.resources.LayoutControl;
 import soot.options.Options;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 
 import org.clyze.doop.soot.android.*;
+
 import static org.clyze.doop.soot.android.AndroidManifest.*;
 
 import static soot.DexClassProvider.classesOfDex;
@@ -25,7 +34,7 @@ import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.Callback
 public class Main {
 
     private static int shift(String[] args, int index) {
-        if(args.length == index + 1) {
+        if (args.length == index + 1) {
             System.err.println("error: option " + args[index] + " requires an argument");
             System.exit(1);
         }
@@ -124,6 +133,14 @@ public class Main {
                     case "--uniqueFacts":
                         sootParameters._uniqueFacts = true;
                         break;
+                    //FIXME: added module mode parameter
+                    case "--modulemode":
+                        sootParameters._moduleMode = true;
+                        break;
+                    case "--modulename":
+                        i = shift(args, i);
+                        sootParameters._moduleName = args[i];
+                        break;
                     case "-h":
                     case "--help":
                     case "-help":
@@ -142,6 +159,9 @@ public class Main {
 
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
+                        System.err.println("  --modulemode                          Analyze Java 9 modules");
+                        System.err.println("  --modulename                          Name of the java 9 module to analyze");
+
                         throw new DoopErrorCodeException(0);
                     case "--generate-jimple-help":
                         System.err.println("\nusage: [options] file");
@@ -165,7 +185,7 @@ public class Main {
                 }
             }
 
-            if(sootParameters._mode == null) {
+            if (sootParameters._mode == null) {
                 sootParameters._mode = SootParameters.Mode.INPUTS;
             }
 
@@ -176,23 +196,19 @@ public class Main {
             if (sootParameters._toStdout && sootParameters._outputDir != null) {
                 System.err.println("error: --stdout and -d options are not compatible");
                 throw new DoopErrorCodeException(2);
-            }
-            else if ((sootParameters._inputs.stream().filter(s -> s.endsWith(".apk")).count() > 0) &&
+            } else if ((sootParameters._inputs.stream().filter(s -> s.endsWith(".apk")).count() > 0) &&
                     (!sootParameters._android)) {
                 System.err.println("error: the --platform parameter is mandatory for .apk inputs");
                 throw new DoopErrorCodeException(3);
-            }
-            else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
+            } else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
                 sootParameters._outputDir = System.getProperty("user.dir");
             }
             produceFacts(sootParameters);
-        }
-        catch(DoopErrorCodeException errCode) {
+        } catch (DoopErrorCodeException errCode) {
             int n = errCode.getErrorCode();
             if (n != 0)
                 System.err.println("Exiting with code " + n);
-        }
-        catch(Exception exc) {
+        } catch (Exception exc) {
             exc.printStackTrace();
         }
     }
@@ -219,7 +235,7 @@ public class Main {
         Set<String> appContentProviders = null;
         Set<String> appBroadcastReceivers = null;
         Set<String> appCallbackMethods = null;
-        Set<PossibleLayoutControl> appUserControls = null;
+        Set<LayoutControl> appUserControls = null;
         File apk = null;
 
         if (sootParameters._android) {
@@ -232,7 +248,8 @@ public class Main {
             if (sootParameters._runFlowdroid) {
                 app.getConfig().setCallbackAnalyzer(Fast);
                 String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
-                app.calculateSourcesSinksEntrypoints(filename);
+                //FIXME: adann no cluie
+               // app.calculateSourcesSinksEntrypoints(filename);
                 dummyMain = app.getDummyMainMethod();
                 if (dummyMain == null) {
                     throw new RuntimeException("Dummy main null");
@@ -277,22 +294,63 @@ public class Main {
                     }
 
                     if (entry.getName().endsWith(".properties")) {
-                        propertyProvider.addProperties((new FoundFile(sootParameters._inputs.get(0), entry.getName())));
+                        Constructor constructor = FoundFile.class.getConstructor(new Class[]{String.class, String.class});
+                        constructor.setAccessible(true);
+                        FoundFile foundFile = (FoundFile) constructor.newInstance(sootParameters._inputs.get(0), entry.getName());
+                        propertyProvider.addProperties(foundFile);
+                        //FIXME: used reflection
+                        //propertyProvider.addProperties((new FoundFile(sootParameters._inputs.get(0), entry.getName())));
                     }
                 }
             }
         }
 
-        Scene scene = Scene.v();
-        scene.setSootClassPath("");
-        for (String input : sootParameters._inputs) {
-            if (input.endsWith(".jar") || input.endsWith(".jar")) {
-                System.out.println("Adding archive: " + input);
+        Scene scene = null;
+        if (sootParameters._moduleMode) {
+            scene = ModuleScene.v();
+          //  ((ModuleScene) scene).setSootModulePath("");
+            StringJoiner stringJoiner = new StringJoiner(":");
+
+            for (String input : sootParameters._inputs) {
+                if (input.endsWith(".jar") || input.endsWith(".jar")) {
+                    System.out.println("Adding archive: " + input);
+                } else {
+                    System.out.println("Adding file: " + input);
+                }
+                stringJoiner.add(input);
             }
-            else {
-                System.out.println("Adding file: " + input);
+           // ((ModuleScene) scene).setSootModulePath(stringJoiner.toString());
+            Options.v().set_soot_modulepath(stringJoiner.toString());
+            Options.v().set_whole_program(true);
+
+            //FIXME: required to add
+            Options.v().set_prepend_classpath(true);
+            classesInApplicationJar.clear();
+
+            Map<String, List<String>> map = ModulePathSourceLocator.v().getClassUnderModulePath(sootParameters._inputs.get(0));
+            for (String module : map.keySet()) {
+                for (String klass : map.get(module)) {
+                    System.out.println("Loaded Class: " + klass + "\n");
+                    SootClass c = ModuleScene.v().loadClassAndSupport(klass, Optional.of(module));
+                    c.setApplicationClass();
+                    classesInApplicationJar.add(c.getName());
+                }
+                SootModuleResolver.v().resolveClass(SootModuleInfo.MODULE_INFO, SootClass.BODIES, com.google.common.base.Optional.of(module));
+
             }
-            scene.extendSootClassPath(input);
+
+
+        } else {
+            scene = Scene.v();
+            scene.setSootClassPath("");
+            for (String input : sootParameters._inputs) {
+                if (input.endsWith(".jar") || input.endsWith(".jar")) {
+                    System.out.println("Adding archive: " + input);
+                } else {
+                    System.out.println("Adding file: " + input);
+                }
+                scene.extendSootClassPath(input);
+            }
         }
 
         for (String lib : sootParameters._libraries) {
@@ -333,7 +391,7 @@ public class Main {
              * a runtime exception when running soot with java 1.8, however it leads to different
              * input fact generation thus leading to different analysis results
              */
-            scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
+          //  scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
             /*
              * For simulating the FileSystem class, we need the implementation
              * of the FileSystem, but the classes are not loaded automatically
@@ -344,13 +402,14 @@ public class Main {
             addCommonDynamicClass(scene, "java.io.Win32FileSystem");
 
             /* java.net.URL loads handlers dynamically */
-            addCommonDynamicClass(scene, "sun.net.www.protocol.file.Handler");
+          /*  addCommonDynamicClass(scene, "sun.net.www.protocol.file.Handler");
             addCommonDynamicClass(scene, "sun.net.www.protocol.ftp.Handler");
             addCommonDynamicClass(scene, "sun.net.www.protocol.http.Handler");
             addCommonDynamicClass(scene, "sun.net.www.protocol.https.Handler");
-            addCommonDynamicClass(scene, "sun.net.www.protocol.jar.Handler");
+            addCommonDynamicClass(scene, "sun.net.www.protocol.jar.Handler");*/
         }
 
+        //TODO: check if works with the module system extension
         scene.loadNecessaryClasses();
         
         /*
@@ -369,10 +428,14 @@ public class Main {
 
         System.out.println("Total classes in Scene: " + classes.size());
         try {
-            PackManager.v().retrieveAllSceneClassesBodies();
+            //FIXME: used refection
+            //PackManager.v().retrieveAllSceneClassesBodies();
+            //  Method method = PackManager.class.getDeclaredMethod("retrieveAllBodies");
+            //  method.setAccessible(true);
+            // method.invoke(PackManager.v());
+            retrieveAllSceneClassesBodies();
             System.out.println("Retrieved all bodies");
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             System.out.println("Not all bodies retrieved");
         }
         Database db = new Database(new File(sootParameters._outputDir), sootParameters._uniqueFacts);
@@ -435,12 +498,12 @@ public class Main {
                     writer.writeCallbackMethod(callbackMethod);
                 }
 
-                for (PossibleLayoutControl possibleLayoutControl : appUserControls) {
+              /*  for (LayoutControl possibleLayoutControl : appUserControls) {
                     writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                     if (possibleLayoutControl.isSensitive()) {
                         writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                     }
-                }
+                }*/
             }
         }
         if (!sootParameters._noFacts) {
@@ -455,8 +518,54 @@ public class Main {
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {
-        if( SourceLocator.v().getClassSource(className) != null) {
+        if (SourceLocator.v().getClassSource(className) != null) {
             scene.addBasicClass(className);
         }
+    }
+
+
+    private static void retrieveAllSceneClassesBodies() {
+        // The old coffi front-end is not thread-safe
+        int threadNum = Options.v().coffi() ? 1 : Runtime.getRuntime().availableProcessors();
+        CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(threadNum, threadNum, 30, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>());
+
+        Iterator<SootClass> clIt = Scene.v().getClasses().snapshotIterator();
+        while (clIt.hasNext()) {
+            SootClass cl = (SootClass) clIt.next();
+            // note: the following is a snapshot iterator;
+            // this is necessary because it can happen that phantom methods
+            // are added during resolution
+            if(cl.resolvingLevel()<SootClass.SIGNATURES)
+                continue;
+
+            Iterator<SootMethod> methodIt = cl.getMethods().iterator();
+            while (methodIt.hasNext()) {
+                final SootMethod m = methodIt.next();
+                if (m.isConcrete()) {
+                    executor.execute(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            m.retrieveActiveBody();
+                        }
+
+                    });
+                }
+            }
+        }
+
+        // Wait till all method bodies have been loaded
+        try {
+            executor.awaitCompletion();
+            executor.shutdown();
+        } catch (InterruptedException e) {
+            // Something went horribly wrong
+            throw new RuntimeException("Could not wait for loader threads to " + "finish: " + e.getMessage(), e);
+        }
+
+        // If something went wrong, we tell the world
+        if (executor.getException() != null)
+            throw (RuntimeException) executor.getException();
     }
 }

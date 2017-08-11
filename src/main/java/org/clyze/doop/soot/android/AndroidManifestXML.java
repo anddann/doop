@@ -12,7 +12,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.*;
 
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+import soot.jimple.infoflow.android.resources.LayoutControl;
 
 import static org.clyze.doop.soot.android.AndroidManifest.*;
 
@@ -154,7 +154,7 @@ public class AndroidManifestXML implements AndroidManifest {
         return ret;
     }
 
-    public Set<PossibleLayoutControl> getUserControls() {
+    public Set<LayoutControl> getUserControls() {
         System.out.println("WARNING: getUserControls() not yet implemented for plain-text XML files.");
         return new HashSet<>();
     }

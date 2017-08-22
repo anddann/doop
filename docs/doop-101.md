@@ -86,7 +86,7 @@ Our first query is to ask for `VarPointTo` entries of variables declared in `Exa
 ```
 #!bash
 $ bloxbatch -db last-analysis -query \
-'_(?var, ?heap) <- VarPointsTo(?var, ?heap), Var:DeclaringMethod(?var, "<Example: void morePlay(Cat)>").'
+'_(?var, ?heap) <- VarPointsTo(?heap, ?var), Var:DeclaringMethod(?var, "<Example: void morePlay(Cat)>").'
   Example.morePlay/@this, Example.main/new Example/0
   Example.morePlay/r0, Example.main/new Example/0
   Example.morePlay/r3, Example.test/new Cat/1

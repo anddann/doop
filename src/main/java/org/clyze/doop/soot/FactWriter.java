@@ -1,5 +1,6 @@
 package org.clyze.doop.soot;
 
+import org.clyze.analysis.AnalysisOption;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 import soot.*;
@@ -77,6 +78,7 @@ class FactWriter {
     }
 
     void writeClassOrInterfaceType(SootClass c) {
+
         String classStr = c.getName();
         if (c.isInterface()) {
             _db.add(INTERFACE_TYPE, classStr);
@@ -84,6 +86,42 @@ class FactWriter {
             _db.add(CLASS_TYPE, classStr);
         }
         _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
+
+    }
+
+
+    //FIXME: new method for ModuleInfo
+    void writeModuleInfo(SootClass c) {
+
+
+        String type = c.getName();
+        String moduleName = c.moduleName;
+        if (moduleName == null || moduleName.isEmpty())
+            return;
+
+
+        if (c instanceof SootModuleInfo) {
+            _db.add(MODULE,moduleName);
+            for(String packageName: ((SootModuleInfo) c).getPublicExportedPackages()){
+                _db.add(MODULE_EXPORTS, moduleName, packageName, "ALL");
+            }
+            //TODO: non public exported modules
+
+        /*    for(String packageName: ((SootModuleInfo) c).get()){
+                _db.add(MODULE_EXPORTS, moduleName, packageName, "ALL");
+            }*/
+
+            for(String packageName:((SootModuleInfo) c).getPublicOpenedPackages()){
+                _db.add(MODULE_OPENS, moduleName, packageName, "ALL");
+            }
+
+            for(SootModuleInfo requiredModule:((SootModuleInfo) c).getRequiredModules().keySet()){
+                _db.add(MODULE_REQUIRES, moduleName, requiredModule.getModuleName());
+            }
+
+        } else {
+            _db.add(CLASS_MODULENAME, moduleName, type);
+        }
     }
 
     void writeDirectSuperclass(SootClass sub, SootClass sup) {

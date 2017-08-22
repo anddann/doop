@@ -116,6 +116,17 @@ ClassModifier(?class, ?modifier) :-
   _ClassModifier(?class, ?modifier).
 
 
+
+// ClassModuleName
+
+.decl _ClassModuleName(?class:symbol, ?module:symbol)
+.input _ClassModuleName(IO="file", filename="ClassModuleName.facts", delimiter="\t")
+
+ClassModuleName(?class, ?module) :-
+  _ClassModuleName(?class, ?module).
+
+
+
 // FormalParam
 
 .decl _FormalParam(?index:number, ?method:symbol, ?var:symbol)

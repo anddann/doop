@@ -19,6 +19,17 @@
 #include "dynamicanalysis.logic"
 #endif                            
 
+
+ExportedByModule(?type) <-
+    Class:PackageName[?type] = ?packageName,
+    ModuleExports(?module,?packageName, "ALL"), ClassModuleName(?module, ?type).
+
+OpenedByModule(?type) <-
+    Class:PackageName[?type] = ?packageName,
+    ModuleOpens(?module,?packageName, "ALL"), ClassModuleName(?module, ?type).
+
+
+
 FakeInvocation:RegisterFinalize[?value] = ?invo <-
    FakeInvocation:RegisterFinalize0[?heap] = ?invo,
    Value:byHeap[?heap] = ?value.

@@ -21,6 +21,16 @@ public enum PredicateFile
     FIELD_INITIAL_VALUE("FieldInitialValue"),
     CLASS_TYPE("ClassType"),
     CLASS_MODIFIER("ClassModifier"),
+
+    //FIXME: adde ModuleName
+    CLASS_MODULENAME("ClassModuleName"),
+    MODULE("Module"),
+    MODULE_EXPORTS("ModuleExports"),
+
+    MODULE_OPENS("ModuleOpens"),
+    MODULE_REQUIRES("ModuleRequires"),
+
+
     ARRAY_TYPE("ArrayType"),
     INTERFACE_TYPE("InterfaceType"),
     COMPONENT_TYPE("ComponentType"),

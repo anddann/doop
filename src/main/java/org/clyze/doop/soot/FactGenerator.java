@@ -36,7 +36,18 @@ class FactGenerator implements Runnable {
     public void run() {
 
         for (SootClass _sootClass : _sootClasses) {
+
+            //FIXME: added case for module info
+            if(_sootClass instanceof SootModuleInfo && _sootClass.resolvingLevel()<SootClass.BODIES)
+                continue;
+
+
+
             _writer.writeClassOrInterfaceType(_sootClass);
+
+
+            //FIXME: added code for module info facts
+            _writer.writeModuleInfo(_sootClass);
 
             int modifiers = _sootClass.getModifiers();
             if(Modifier.isAbstract(modifiers))

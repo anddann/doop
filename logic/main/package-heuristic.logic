@@ -31,3 +31,8 @@ Class:PackageHack[?type] = ?packageName <-
   !(LastDot[?type] = _), // there are no dots
   ClassType(?type), Type:Id(?type:?packageName).
 
+
+Class:PackageName[?type] = ?packageName <-
+  LastDot[?type] = ?lastPos,
+  ClassType(?type), Type:Id(?type:?name),
+  string:substring[?name,0,?lastPos] = ?packageName.

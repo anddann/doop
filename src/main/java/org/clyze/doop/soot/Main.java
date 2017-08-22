@@ -536,6 +536,7 @@ public class Main {
             // note: the following is a snapshot iterator;
             // this is necessary because it can happen that phantom methods
             // are added during resolution
+            //FIXME: added case for module info (not required module-info files)
             if(cl.resolvingLevel()<SootClass.SIGNATURES)
                 continue;
 

@@ -85,6 +85,24 @@ AssignHeapAllocation_Heap(?instruction, ?heap) :-
   _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?method).
 
 
+// AndroidEntryPoint
+
+.decl _AndroidEntryPoint(?method:symbol)
+.input _AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
+
+AndroidEntryPoint(?method) :-
+  _AndroidEntryPoint(?method).
+
+
+// AndroidApplication
+
+.decl _AndroidApplication(?type:symbol)
+.input _AndroidApplication(IO="file", filename="AndroidApplication.facts", delimiter="\t")
+
+AndroidApplication(?type) :-
+   _AndroidApplication(?type).
+
+
 // AssignLocal
 
 .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol)
@@ -687,26 +705,6 @@ Instruction_Method(?instruction, ?method) :-
   _UnsupportedInstruction(?instruction, ?index, ?method).
 
 
-#ifdef ANDROID
-
-// AndroidEntryPoint
-
-.decl _AndroidEntryPoint(?method:symbol)
-.input _AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
-
-AndroidEntryPoint(?method) :-
-  _AndroidEntryPoint(?method).
-
-
-// AndroidApplication
-
-.decl _AndroidApplication(?type:symbol)
-.input _AndroidApplication(IO="file", filename="AndroidApplication.facts", delimiter="\t")
-
-AndroidApplication(?type) :-
-   _AndroidApplication(?type).
-
-
 // Activity
 
 .decl _Activity(?id:symbol)
@@ -782,7 +780,6 @@ SensitiveLayoutControl0(?id, ?typename, ?parent) :-
 FieldInitialValue(?fld, ?valueString) :-
   _FieldInitialValue(?fld, ?valueString).
 
-#endif
 
 // Access Modifiers
 

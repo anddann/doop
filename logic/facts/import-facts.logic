@@ -10,6 +10,11 @@ _NormalHeap(?id, ?type) ->
    _NormalHeap(?id, ?type).
 
 
+//ModuleConstant
++Module(?x), +Module:Id(?x:"ALL").
+
+
+
 // StringConstant
 lang:physical:storageModel[`_StringConstant] = "DelimitedFile".
 lang:physical:filePath[`_StringConstant] = "facts/StringConstant.facts".

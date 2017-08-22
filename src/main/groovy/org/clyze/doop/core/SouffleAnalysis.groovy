@@ -226,7 +226,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
             // Create a subshell to temporarely cd to the analysis cache directory and execute the compilation
             // command, as the analysis executable is created at the directory level of the command's invocation.
-            def subshellCommand = "(${compilationCommand} && cp ${outDir}/${name} ${souffleAnalysisCacheFile.canonicalPath}" + ")"
+            def subshellCommand = "(cd ${souffleAnalysesCache} && ${compilationCommand} && cp ${outDir}/${name} ${souffleAnalysisCacheFile.canonicalPath} 2>/dev/null" + ")"
 
             logger.debug "Setup subshell command: $subshellCommand"
 
@@ -268,7 +268,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
     @Override
     protected void produceStats() {
-        if (options.X_STATS_NONE.value) return
+        if (options.X_STATS_NONE.value) return;
 
         if (options.X_STATS_AROUND.value) {
         }

@@ -140,6 +140,115 @@ _DirectSuperclass(?param1, ?param2) ->
   _DirectSuperclass(?param1, ?param2).
 
 
+// Module
+
+lang:physical:storageModel[`_Module] = "DelimitedFile".
+lang:physical:filePath[`_Module] = "facts/Module.facts".
+lang:physical:delimiter[`_Module] = "\t".
+lang:physical:hasColumnNames[`_Module] = false.
+
+_Module(?param1) ->
+  string(?param1).
+
+
+
++Module(?module) <-
+  _Module(?module).
+
+
+// ModuleExports
+
+lang:physical:storageModel[`_ModuleExports] = "DelimitedFile".
+lang:physical:filePath[`_ModuleExports] = "facts/ModuleExports.facts".
+lang:physical:delimiter[`_ModuleExports] = "\t".
+lang:physical:hasColumnNames[`_ModuleExports] = false.
+
+_ModuleExports(?param1, ?param2, ?param3) ->
+  string(?param1),
+  string(?param2),
+  string(?param3).
+
+
++Module:Id(?module:?param1),
++Module(?module),
++Module:Id(?module3:?param3),
++Module(?module3),
++ModuleExports(?module, ?package, ?module3) <-
+  _ModuleExports(?param1, ?package, ?param3).
+
+
+
+// ModuleOpens
+
+lang:physical:storageModel[`_ModuleOpens] = "DelimitedFile".
+lang:physical:filePath[`_ModuleOpens] = "facts/ModuleOpens.facts".
+lang:physical:delimiter[`_ModuleOpens] = "\t".
+lang:physical:hasColumnNames[`_ModuleOpens] = false.
+
+_ModuleOpens(?param1, ?param2, ?param3) ->
+  string(?param1),
+  string(?param2),
+  string(?param3).
+
+
++Module:Id(?module:?param1),
++Module(?module),
++Module:Id(?module3:?param3),
++Module(?module3),
++ModuleOpens(?module, ?package, ?module) <-
+  _ModuleOpens(?param1, ?package, ?param3).
+
+
+
+
+
+
+
+
+// ModuleRequires
+
+lang:physical:storageModel[`_ModuleRequires] = "DelimitedFile".
+lang:physical:filePath[`_ModuleRequires] = "facts/ModuleRequires.facts".
+lang:physical:delimiter[`_ModuleRequires] = "\t".
+lang:physical:hasColumnNames[`_ModuleRequires] = false.
+
+_ModuleRequires(?param1, ?param2) ->
+  string(?param1),
+  string(?param2).
+
+
++Module:Id(?module:?param1),
++Module(?module),
++Module:Id(?module2:?param2),
++Module(?module2),
++ModuleRequires(?module, ?module2) <-
+  _ModuleRequires(?param1, ?param2).
+
+
+
+
+// ClassModuleName
+
+lang:physical:storageModel[`_ClassModuleName] = "DelimitedFile".
+lang:physical:filePath[`_ClassModuleName] = "facts/ClassModuleName.facts".
+lang:physical:delimiter[`_ClassModuleName] = "\t".
+lang:physical:hasColumnNames[`_ClassModuleName] = false.
+
+_ClassModuleName(?param1, ?param2) ->
+  string(?param1),
+  string(?param2).
+
+
++Module:Id(?module:?param1),
++Module(?module),
++Type:Id(?classType:?param2),
++ClassType(?classType),
++ClassModuleName(?module, ?classType) <-
+  _ClassModuleName(?param1, ?param2).
+
+
+
+
 // Field:Modifier
 
 lang:physical:storageModel[`_Field:Modifier] = "DelimitedFile".

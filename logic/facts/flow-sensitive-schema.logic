@@ -13,7 +13,10 @@ SimpleName(?x), SimpleName:Id(?x:?id) -> string(?id).
 NumConstant(?x), NumConstant:Id(?x:?id) -> string(?id).
 
 
-Modifier(?x), Modifier:Id(?x:?id) -> string(?id).
+
+
+
+
 
 Modifier:abstract[] = ?mod -> Modifier(?mod).
 Modifier:final[]    = ?mod -> Modifier(?mod).
@@ -21,6 +24,23 @@ Modifier:public[]   = ?mod -> Modifier(?mod).
 Modifier:private[]  = ?mod -> Modifier(?mod).
 Modifier:static[]   = ?mod -> Modifier(?mod).
 Modifier:transient[]   = ?mod -> Modifier(?mod).
+
+
+/// Module Stuff
+
+ClassModuleName(?module, ?classType) ->
+   Module(?module), ClassType(?classType).
+
+Modifier(?x), Modifier:Id(?x:?id) -> string(?id).
+
+Module(?x), Module:Id(?x:?id) -> string(?id).
+
+
+ModuleExports(?module, ?package, ?module3) -> Module(?module), string(?package), Module(?module3).
+
+ModuleOpens(?module, ?package, ?module3) -> Module(?module), string(?package), Module(?module3).
+
+ModuleRequires(?module, ?module2) -> Module(?module), Module(?module2).
 
 
 // Java Type Hierarchy

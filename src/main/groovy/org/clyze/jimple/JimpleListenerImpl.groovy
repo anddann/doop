@@ -8,7 +8,7 @@ import org.clyze.persistent.model.doop.*
 
 import static org.clyze.jimple.JimpleParser.*
 
-class JimpleListenerImpl extends JimpleBaseListener {
+class JimpleListenerImpl extends org.clyze.jimple.JimpleBaseListener {
 
 	String filename
 	List<Map> pending

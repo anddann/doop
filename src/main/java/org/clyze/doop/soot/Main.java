@@ -248,7 +248,7 @@ public class Main {
             if (sootParameters._runFlowdroid) {
                 app.getConfig().setCallbackAnalyzer(Fast);
                 String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
-                //FIXME: adann no cluie
+                //FIXME: adann no clue
                // app.calculateSourcesSinksEntrypoints(filename);
                 dummyMain = app.getDummyMainMethod();
                 if (dummyMain == null) {
@@ -323,7 +323,7 @@ public class Main {
             Options.v().set_soot_modulepath(stringJoiner.toString());
             Options.v().set_whole_program(true);
 
-            //FIXME: required to add
+            //FIXME: required to add for module mode // to use jrt_/
             Options.v().set_prepend_classpath(true);
             classesInApplicationJar.clear();
 
@@ -409,7 +409,6 @@ public class Main {
             addCommonDynamicClass(scene, "sun.net.www.protocol.jar.Handler");*/
         }
 
-        //TODO: check if works with the module system extension
         scene.loadNecessaryClasses();
         
         /*
@@ -524,7 +523,7 @@ public class Main {
     }
 
 
-    private static void retrieveAllSceneClassesBodies() {
+    public static void retrieveAllSceneClassesBodies() {
         // The old coffi front-end is not thread-safe
         int threadNum = Options.v().coffi() ? 1 : Runtime.getRuntime().availableProcessors();
         CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(threadNum, threadNum, 30, TimeUnit.SECONDS,

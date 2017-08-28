@@ -72,6 +72,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: true,
 					isAdvanced: true
 			),
+			new BooleanAnalysisOption(
+					id: "REUSECLASSESINSCENE",
+					name: "reuseclasses",
+                    description: "Reuse Classes loaded in Scene.",
+                    value: false,
+					webUI: true,
+					isAdvanced: true
+			),
 			new AnalysisOption<String>(
 					id: "INPUTS",
 					name: "inputFiles",

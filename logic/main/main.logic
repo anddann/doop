@@ -20,13 +20,6 @@
 #endif                            
 
 
-ExportedByModule(?type) <-
-    Class:PackageName[?type] = ?packageName,
-    ModuleExports(?module,?packageName, "ALL"), ClassModuleName(?module, ?type).
-
-OpenedByModule(?type) <-
-    Class:PackageName[?type] = ?packageName,
-    ModuleOpens(?module,?packageName, "ALL"), ClassModuleName(?module, ?type).
 
 
 

@@ -43,6 +43,21 @@ ModuleOpens(?module, ?package, ?module3) -> Module(?module), string(?package), M
 ModuleRequires(?module, ?module2) -> Module(?module), Module(?module2).
 
 
+Class:PackageName[?type] = ?packageName -> Type(?type), string(?packageName).
+
+
+OpenedByModule(?type) <-
+    Class:PackageName[?type] = ?packageName,
+    ModuleOpens(?module,?packageName, "ALL"), ClassModuleName(?module, ?type).
+
+ExportedByModule(?type) <-
+    Class:PackageName[?type] = ?packageName,
+    ModuleExports(?module,?packageName, "ALL"), ClassModuleName(?module, ?type).
+
+
+
+
+
 // Java Type Hierarchy
 
 Type(?x), Type:Id(?x:?id) -> string(?id).

@@ -83,6 +83,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
      */
+
     protected DoopAnalysis(String id,
                            String name,
                            Map<String, AnalysisOption> options,
@@ -97,18 +98,18 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         this.cacheDir = cacheDir
         this.platformLibs = platformLibs
 
-        logger      = LogFactory.getLog(getClass())
+        logger = LogFactory.getLog(getClass())
 
-        factsDir    = new File(outDir, "facts")
-        database    = new File(outDir, "database")
+        factsDir = new File(outDir, "facts")
+        database = new File(outDir, "database")
         averroesDir = new File(outDir, "averroes")
 
-        executor    = new Executor(commandsEnvironment)
-        cpp         = new CPreprocessor(this, executor)
+        executor = new Executor(commandsEnvironment)
+        cpp = new CPreprocessor(this, executor)
     }
 
     String toString() {
-        return [id:id, name:name, outDir:outDir, cacheDir:cacheDir, inputFiles:ctx.toString()]
+        return [id: id, name: name, outDir: outDir, cacheDir: cacheDir, inputFiles: ctx.toString()]
                 .collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") + "\n" +
                 options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
     }
@@ -123,12 +124,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (cacheDir.exists() && options.CACHE.value) {
             logger.info "Using cached facts from $cacheDir"
             FileOps.copyDirContents(cacheDir, factsDir)
-        }
-        else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
+        } else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
             logger.info "Using user-provided facts from $factsDir"
             FileOps.copyDirContents(cacheDir, factsDir)
-        }
-        else {
+        } else {
             logger.info "-- Fact Generation --"
 
             if (options.RUN_JPHANTOM.value) {
@@ -151,13 +150,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
-            }
-            else if (options.DACAPO_BACH.value) {
+            } else if (options.DACAPO_BACH.value) {
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
-            }
-            else {
+            } else {
                 touch(new File(factsDir, "Dacapo.facts"))
             }
             if (options.TAMIFLEX.value) {
@@ -168,7 +165,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         w << line
                                 .replaceFirst(/;[^;]*;$/, "")
                                 .replaceFirst(/;$/, ";0")
-                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second+ "\n" }
+                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second + "\n" }
                                 .replaceAll(";", "\t").replaceFirst(/\./, "\t")
                     }
                 }
@@ -207,15 +204,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             //change linked arg and injar accordingly
             inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
-        }
-        else {
-            def deps = inputFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-            depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
+        } else {
+            def deps = inputFiles.drop(1).collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
+            depArgs = (platformLibs.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
         Collection<String> params
 
-        switch(platform) {
+        switch (platform) {
             case "java":
                 params = ["--full"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
                 break
@@ -224,7 +220,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
                 // This uses just platformLibs[0], assumed to be android.jar.
                 params = ["--full"] + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
-        break
+                break
             default:
                 throw new RuntimeException("Unsupported platform")
         }
@@ -256,33 +252,39 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.UNIQUE_FACTS.value) {
             params += ["--uniqueFacts"]
         }
-        if(options.MODULEMODE.value){
-            params+=["--modulemode"]
+        if (options.MODULEMODE.value) {
+            params += ["--modulemode"]
         }
-        if(options.MODULENAME.value){
-            params+=["--modulename", options.MODULENAME.value.toString()]
+        if (options.MODULENAME.value) {
+            params += ["--modulename", options.MODULENAME.value.toString()]
         }
 
         params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
-        sootTime = Helper.timing {
-            //We invoke soot reflectively using a separate class-loader to be able
-            //to support multiple soot invocations in the same JVM @ server-side.
-            //TODO: Investigate whether this approach may lead to memory leaks,
-            //not only for soot but for all other Java-based tools, like jphantom
-            //or averroes.
-            //In such a case, we should invoke all Java-based tools using a
-            //separate process.
-            ClassLoader loader = sootClassLoader()
-            Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
-        }
 
+        if (options.REUSECLASSESINSCENE.value) {
+            ClassLoader loader = sootClassLoader()
+            Helper.execJava(loader, "org.clyze.doop.soot.ReuseSceneMain", params.toArray(new String[params.size()]))
+
+        } else {
+            sootTime = Helper.timing {
+                //We invoke soot reflectively using a separate class-loader to be able
+                //to support multiple soot invocations in the same JVM @ server-side.
+                //TODO: Investigate whether this approach may lead to memory leaks,
+                //not only for soot but for all other Java-based tools, like jphantom
+                //or averroes.
+                //In such a case, we should invoke all Java-based tools using a
+                //separate process.
+                ClassLoader loader = this.getClass().classLoader;
+                Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
+            }
+        }
         logger.info "Fact generation time: ${sootTime}"
     }
 
-    protected void runJPhantom(){
+    protected void runJPhantom() {
         logger.info "-- Running jphantom to generate complement jar --"
 
         String jar = inputFiles[0].toString()
@@ -361,7 +363,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.DYNAMIC.value) {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             File dynFileAll = new File(outDir, "all.dyn")
-            dynFiles.each {String dynFile ->
+            dynFiles.each { String dynFile ->
                 dynFileAll.append new File(dynFile).text
             }
             props.setProperty("dynamic_classes_file", dynFileAll.toString())
@@ -395,7 +397,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         String path = "${options.DOOP_PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
 
         //Not using if/else for readability
-        switch(version) {
+        switch (version) {
             case "1.3":
                 return []
             case "1.4":

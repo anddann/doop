@@ -61,7 +61,7 @@ class ClassicAnalysis extends DoopAnalysis {
                     FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
                     reanalyze()
                 }
-                catch(e) {
+                catch (e) {
                     logger.debug e.getMessage()
                 }
 
@@ -195,8 +195,8 @@ class ClassicAnalysis extends DoopAnalysis {
     @Override
     protected void mainAnalysis() {
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
-        def macros       = "${Doop.analysesPath}/${name}/macros.logic"
-        def mainPath     = "${Doop.logicPath}/main"
+        def macros = "${Doop.analysesPath}/${name}/macros.logic"
+        def mainPath = "${Doop.logicPath}/main"
         def analysisPath = "${Doop.analysesPath}/${name}"
 
         // By default, assume we run a context-sensitive analysis
@@ -206,7 +206,7 @@ class ClassicAnalysis extends DoopAnalysis {
             Properties props = FileOps.loadProperties(file)
             isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
         }
-        catch(e) {
+        catch (e) {
             logger.debug e.getMessage()
         }
         if (isContextSensitive) {
@@ -217,8 +217,7 @@ class ClassicAnalysis extends DoopAnalysis {
                     commonMacros, "${mainPath}/main-delta.logic")
             cpp.preprocess("${outDir}/${name}.logic", "${analysisPath}/analysis.logic",
                     commonMacros, macros, "${mainPath}/context-sensitivity.logic")
-        }
-        else {
+        } else {
             cpp.preprocess("${outDir}/${name}-declarations.logic", "${analysisPath}/declarations.logic")
             cpp.preprocessIfExists("${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
             cpp.preprocessIfExists("${outDir}/${name}-prologue.logic", "${analysisPath}/prologue.logic")
@@ -285,16 +284,26 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocess("${outDir}/addons.logic", options.IMPORT_PARTITIONS.value.toString())
         }
 
+
+
         if (options.OPEN_PROGRAMS.value) {
             cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.logic", macros)
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
 
         } else {
             if (!(name == "naive" || name == "micro")) {
-                // This needs cleaning up. We are including one version by default, but distinguishing
-                // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.
-                cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
-                cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
+
+                //FIXME: added here custom module entrypoints
+                if (options.MODULEMODE.value) {
+                    cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/module-rules-concrete-types.logic", macros)
+                    cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
+                } else {
+
+                    // This needs cleaning up. We are including one version by default, but distinguishing
+                    // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.
+                    cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
+                    cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
+                }
             }
         }
 
@@ -375,7 +384,7 @@ class ClassicAnalysis extends DoopAnalysis {
             return
         }
 
-        def macros    = "${Doop.analysesPath}/${name}/macros.logic"
+        def macros = "${Doop.analysesPath}/${name}/macros.logic"
         def statsPath = "${Doop.addonsPath}/statistics"
         cpp.preprocess("${outDir}/statistics-simple.logic", "${statsPath}/statistics-simple.logic", macros)
 

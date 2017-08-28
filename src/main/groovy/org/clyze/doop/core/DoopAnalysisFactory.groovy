@@ -352,7 +352,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def inputFiles
         def platformFiles
 
-        if (!options.X_START_AFTER_FACTS.value) {
+        if (!options.X_START_AFTER_FACTS.value || options.REUSECLASSESINSCENE.value) {
             inputFilePaths = context.inputs()
             platformFilePaths = platform(options)
 

@@ -1,0 +1,163 @@
+EntryPoint(?method) -> Method(?method).
+
+
+//original definition
+//ClassHasPossibleEntryPoint(?class),
+//PossibleEntryPoint(?method) <-
+//   Method:DeclaringType[?method] = ?class,
+//   Method:Modifier("public", ?method),
+//   !ClassModifier("private", ?class).
+
+
+ClassHasPossibleEntryPoint(?class),
+PossibleEntryPoint(?method) <-
+  Method:DeclaringType[?method] = ?class,
+  MethodAccessible(?method),
+  !ClassModifier("private", ?class).
+
+
+//FIXME: replace module name here by the one defined in the program
+MethodAccessible(?method) <-
+    MethodDirectAccessible(?method)
+    ;
+    (
+        (
+         ReturnVarMethods(?method)
+         ;
+         StaticFieldsMethods(?method)
+        ),
+
+     MethodInDirectAccessible(?method) ).
+
+
+//Methods of VarPointsTo of returnVar of entrypoints
+ReturnVarMethods(?method) <-
+//get the return value of entrypoints
+    EntryPoint(?entryMethod),
+    ReturnVar(?var, ?entryMethod),
+    VarPointsTo(_, ?heap, _, ?var),
+// get the types
+    Value:Type[?heap] = ?retType,
+// get the methods of the return types
+    Method:DeclaringType[?method] = ?retType.
+
+
+//get the type of the points to
+//Methods of VarPointsTo of returnVar of entrypoints
+StaticFieldsMethods(?method) <-
+//get the return value of entrypoints
+    EntryPoint(?entryMethod),
+    ReturnVar(?var, ?entryMethod),
+    VarPointsTo(_, ?heap, _, ?var),
+// get the types
+    Value:Type[?heap] = ?retType,
+// get the fields of the return types
+    Field:DeclaringType[?field] = ?retType,
+    // get the fields PTS
+   StaticFieldPointsTo(_, ?value, ?field),
+   //get their types
+    Value:Type[?value] = ?fieldType,
+    // get their methods
+    Method:DeclaringType[?method] = ?fieldType.
+
+
+
+
+
+//method is directly accessible
+//exported and (public or static protected)
+MethodDirectAccessible(?method) <-
+       Method:DeclaringType[?method] = ?class,
+       ClassModuleName("de.upb.mod2",?class),
+       ExportedByModule(?class),
+       !Method:Modifier("abstract",?method),
+       (
+        Method:Modifier("public", ?method);
+        (
+            Method:Modifier("protected",?method),
+            Method:Modifier("static",?method)
+        )
+       ).
+
+
+//method overrides/implements an exported one
+MethodInDirectAccessible(?method) <-
+      Method:DeclaringType[?method] = ?class,
+      ClassModuleName("de.upb.mod2",?class),
+      Method:Modifier("public", ?method),
+    //check if method implements/extends overrides method in exported class
+     (
+       MethodInherited(?method,?class,?supertype);
+       MethodInterface(?method,?class,?supertype)
+     ),
+     ExportedByModule(?supertype),
+     ClassModuleName("de.upb.mod2",?supertype).
+
+
+
+//TODO: check if this is correct
+MethodInherited(?meth, ?class, ?superClass) <-
+   Method:DeclaringType[?meth] = ?class,
+   Superclass(?class, ?superClass),
+   Method:Descriptor[?meth] = ?descriptor,
+   Method:SimpleName[?meth] = ?simplename,
+   MethodDeclared[?simplename, ?descriptor, ?superClass] = _.
+
+
+
+
+MethodInterface(?meth, ?class, ?interface) <-
+     Method:DeclaringType[?meth] = ?class,
+     Superinterface(?interface, ?class),
+     Method:Descriptor[?meth] = ?descriptor,
+     Method:SimpleName[?meth] = ?simplename,
+     MethodDeclared[?simplename, ?descriptor, ?interface] = _.
+
+MethodDeclared[?simplename, ?descriptor, ?type] = ?method <-
+   Method:SimpleName[?method] = ?simplename,
+   Method:Descriptor[?method] = ?descriptor,
+   Method:DeclaringType[?method] = ?type.
+
+
+ExportedMethods(?method) <- ClassModuleName("de.upb.mod2",?classes), Method:DeclaringType[?method] = ?classes.
+
+MethodInModuleReachable(?method) <-
+     Method:DeclaringType[?method] = ?class,
+     ExportedByModule(?class),
+     Method:Modifier("public",?method).
+
+// Find highest level in the naming hierarchy that contains public
+// methods.
+ClassIsAboveOtherInNamingHierarchy(?classAbove, ?classBelow) <-
+   ClassHasPossibleEntryPoint(?classAbove),
+   ClassHasPossibleEntryPoint(?classBelow),
+   Type:Id(?classAbove:?nameAbove), Type:Id(?classBelow:?nameBelow),
+   // One's prefix before "." is a proper prefix of the other's prefix before "."
+   string:substring[?nameAbove,0,LastDot[?classAbove]+1] = ?prefixAbove,
+   string:substring[?nameBelow,0,LastDot[?classBelow]] = ?prefixBelow,
+   string:substring[?prefixBelow,0,string:length[?prefixAbove]] = ?prefixAbove.
+
+ClassWithTopLevelEntryPoint(?class) <-
+   ClassHasPossibleEntryPoint(?class),
+   !ClassIsAboveOtherInNamingHierarchy(_, ?class).
+
+TopLevelApplicationClass(?class) <-
+   ClassWithTopLevelEntryPoint(?class),
+   ApplicationClass(?class).
+
+ClassToConsider(?class) <-
+   TopLevelApplicationClass(?class).
+
+ClassToConsider(?class) <-
+   !TopLevelApplicationClass(_),
+   ApplicationClass(?class).
+
+TopLevelEntryPoint(?method) <-
+   PossibleEntryPoint(?method),
+   Method:DeclaringType[?method] = ?class,
+   ClassToConsider(?class).
+
+// The definition we currently want as default
+EntryPoint(?method) <-
+   PossibleEntryPoint(?method).
+

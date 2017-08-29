@@ -249,7 +249,7 @@ public class Main {
                 app.getConfig().setCallbackAnalyzer(Fast);
                 String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
                 //FIXME: adann no clue
-               // app.calculateSourcesSinksEntrypoints(filename);
+                // app.calculateSourcesSinksEntrypoints(filename);
                 dummyMain = app.getDummyMainMethod();
                 if (dummyMain == null) {
                     throw new RuntimeException("Dummy main null");
@@ -308,7 +308,7 @@ public class Main {
         Scene scene = null;
         if (sootParameters._moduleMode) {
             scene = ModuleScene.v();
-          //  ((ModuleScene) scene).setSootModulePath("");
+            //  ((ModuleScene) scene).setSootModulePath("");
             StringJoiner stringJoiner = new StringJoiner(":");
 
             for (String input : sootParameters._inputs) {
@@ -319,7 +319,7 @@ public class Main {
                 }
                 stringJoiner.add(input);
             }
-           // ((ModuleScene) scene).setSootModulePath(stringJoiner.toString());
+            // ((ModuleScene) scene).setSootModulePath(stringJoiner.toString());
             Options.v().set_soot_modulepath(stringJoiner.toString());
             Options.v().set_whole_program(true);
 
@@ -327,16 +327,20 @@ public class Main {
             Options.v().set_prepend_classpath(true);
             classesInApplicationJar.clear();
 
-            Map<String, List<String>> map = ModulePathSourceLocator.v().getClassUnderModulePath(sootParameters._inputs.get(0));
-            for (String module : map.keySet()) {
-                for (String klass : map.get(module)) {
-                    System.out.println("Loaded Class: " + klass + "\n");
-                    SootClass c = ModuleScene.v().loadClassAndSupport(klass, Optional.of(module));
-                    c.setApplicationClass();
-                    classesInApplicationJar.add(c.getName());
-                }
-                SootModuleResolver.v().resolveClass(SootModuleInfo.MODULE_INFO, SootClass.BODIES, com.google.common.base.Optional.of(module));
+            for (int i = 0; i < sootParameters._inputs.size(); i++) {
 
+
+                Map<String, List<String>> map = ModulePathSourceLocator.v().getClassUnderModulePath(sootParameters._inputs.get(i));
+                for (String module : map.keySet()) {
+                    for (String klass : map.get(module)) {
+                        System.out.println("Loaded Class: " + klass + "\n");
+                        SootClass c = ModuleScene.v().loadClassAndSupport(klass, Optional.of(module));
+                        c.setApplicationClass();
+                        classesInApplicationJar.add(c.getName());
+                    }
+                    SootModuleResolver.v().resolveClass(SootModuleInfo.MODULE_INFO, SootClass.BODIES, com.google.common.base.Optional.of(module));
+
+                }
             }
 
 
@@ -391,7 +395,7 @@ public class Main {
              * a runtime exception when running soot with java 1.8, however it leads to different
              * input fact generation thus leading to different analysis results
              */
-          //  scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
+            //  scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
             /*
              * For simulating the FileSystem class, we need the implementation
              * of the FileSystem, but the classes are not loaded automatically
@@ -536,7 +540,7 @@ public class Main {
             // this is necessary because it can happen that phantom methods
             // are added during resolution
             //FIXME: added case for module info (not required module-info files)
-            if(cl.resolvingLevel()<SootClass.SIGNATURES)
+            if (cl.resolvingLevel() < SootClass.SIGNATURES)
                 continue;
 
             Iterator<SootMethod> methodIt = cl.getMethods().iterator();

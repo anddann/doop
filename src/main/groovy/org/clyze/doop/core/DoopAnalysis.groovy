@@ -205,7 +205,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         } else {
-            def deps = inputFiles.drop(1).collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
+            //FIXME: why is a drop here???
+           // def deps = inputFiles.drop(1).collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
+            def deps = inputFiles.collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
+
             depArgs = (platformLibs.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
@@ -259,13 +262,17 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--modulename", options.MODULENAME.value.toString()]
         }
 
-        params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
+        params = params + ["-d", factsDir.toString()]
+
+        for(int i=0; i<inputFiles.size();i++){
+            params = params + [inputFiles[i].toString()]
+        }
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
 
         if (options.REUSECLASSESINSCENE.value) {
-            ClassLoader loader = sootClassLoader()
+            ClassLoader loader = this.class.classLoader
             Helper.execJava(loader, "org.clyze.doop.soot.ReuseSceneMain", params.toArray(new String[params.size()]))
 
         } else {
@@ -277,7 +284,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 //or averroes.
                 //In such a case, we should invoke all Java-based tools using a
                 //separate process.
-                ClassLoader loader = this.getClass().classLoader;
+                ClassLoader loader = sootClassLoader();
                 Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
             }
         }

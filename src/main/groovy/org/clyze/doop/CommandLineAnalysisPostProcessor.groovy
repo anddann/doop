@@ -92,6 +92,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
         def lastAnalysis = "${Doop.doopHome}/last-analysis"
         logger.info "Making database available at $lastAnalysis"
         analysis.executor.execute("ln -s -f -n ${analysis.database} \"$lastAnalysis\"")
+        println "\"ln -s -f -n ${analysis.database} \\\"$lastAnalysis\\\"\""
     }
 
     protected boolean filterOutLBWarn(String line) {

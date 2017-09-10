@@ -130,6 +130,7 @@ class Main {
             logger.error(e.getMessage(), e)
             System.exit(-1)
         }
+
     }
 
     private static void changeLogLevel(def logLevel) {

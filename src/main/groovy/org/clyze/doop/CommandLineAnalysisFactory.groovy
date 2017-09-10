@@ -44,7 +44,8 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
         List<String> inputs = []
         //Get the inputFiles of the analysis (short option: i)
-        if (!options.X_START_AFTER_FACTS.value)
+      //  if (!(options.X_START_AFTER_FACTS.value || options.REUSECLASSESINSCENE.value))
+        if (!(options.X_START_AFTER_FACTS.value))
             inputs = cli.is
 
         return newAnalysis(FAMILY, id, name, options, inputs)

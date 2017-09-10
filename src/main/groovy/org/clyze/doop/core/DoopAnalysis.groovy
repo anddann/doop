@@ -206,8 +206,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         } else {
             //FIXME: why is a drop here???
-           // def deps = inputFiles.drop(1).collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
-            def deps = inputFiles.collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
+            def deps = inputFiles.drop(1).collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
+           // def deps = inputFiles.collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
 
             depArgs = (platformLibs.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
@@ -262,7 +262,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--modulename", options.MODULENAME.value.toString()]
         }
 
-        params = params + ["-d", factsDir.toString()]
+        params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
 
         for(int i=0; i<inputFiles.size();i++){
             params = params + [inputFiles[i].toString()]

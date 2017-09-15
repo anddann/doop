@@ -43,7 +43,7 @@ ObjToMock(?fieldType) <-
    !ClassModifier("abstract", ?fieldType),
    ReferenceType(?fieldType),
    ObjToMock(?class).
- 
+
 FieldInformation(?signature, ?fieldtype, ?class) ->
    Field(?signature), Type(?fieldtype), Type(?class).
 
@@ -61,7 +61,7 @@ FieldInformation(?signature, ?fieldConcreteType, ?class) <-
 
 FieldInformationOpt(?signature, ?class, ?fieldtype) <-
    FieldInformation(?signature, ?fieldtype, ?class).
-   
+
 FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) ->
    Field(?signature), Type(?fieldtype), Value(?basevalue).
 
@@ -70,7 +70,7 @@ FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) <-
    MockObject(?basevalue, ?class).
 
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) <-
-   ImmutableHContext(?hctx), //TODO: hctx 
+   ImmutableHContext(?hctx), //TODO: hctx
    FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype),
    MockObjectForType(?value, ?fieldtype).
 #endif
@@ -117,14 +117,14 @@ MockForFormal(?value, ?formal, ?type, ?method) <-
    TypeForFormals(?formal, ?method, ?type),
 // When running a mutliple segregated analysis, we want to restrict the program
 // so that we avoid data flowing from classes in different partitions.
-// We should select formal parameters with this intuition in mind.   
+// We should select formal parameters with this intuition in mind.
 #ifdef MULTIPLE_SEGREGATED_ANALYSES
    Method:DeclaringType[?method] = ?class,
    TypeToPartitionId[?class] = TypeToPartitionId[?type],
 #endif
-   MockObject(?value, ?type).
-   
-   
+     //FIXME: added this here
+    ContextForFormal(?value, ?type).
+
 
 // bind mock objects to formals
 MockObjectContext(?hctx, ?value, ?class),
@@ -170,7 +170,8 @@ ContextForEntryPoint(?calleeCtx, ?method)
  <-
    ThisVar[?method] = ?receiver,
    Method:DeclaringType[?method] = ?class,
-   MockObjectForType(?value, ?class),
+//FIXME: modified this, to bind this variable of entrypoints to potential return values
+   ContextForThisVar(?value, ?class),
 #ifndef MergeOpenProgramEntryPointMacro
    ImmutableHContext(?immutablehctx),
    ?immutablehctx = ?immutablehctx, // avoid warning if unused
@@ -180,6 +181,16 @@ ContextForEntryPoint(?calleeCtx, ?method)
 #endif
    EntryPoint(?method).
 
+
+//FIXME: modified this, to bind this variable of entrypoints to potential return values
+ContextForThisVar(?value,?class)<-
+    (EntryPoint(?meth), ReturnVar(?var,?meth), VarPointsTo(_,?value,_,?var), Value:Type[?value]=?class);
+    MockObjectForType(?value, ?class).
+
+//FIXME: added tis
+ContextForFormal(?value,?type)<-
+(EntryPoint(?meth), ReturnVar(?var,?meth), VarPointsTo(_,?value,_,?var), Value:Type[?value]=?type);
+MockObject(?value, ?type).
 
 // TODO: requires major tweaking for context sensitive analyses
 // Consider a recency abstraction for context in static methods
@@ -202,13 +213,34 @@ ConcreteImplementations[?staticType] = ?class <-
                          AllConcreteImplementations(?allClasses, ?staticType)
                       ).
 
+
+
+//FIXME: instead of random, we select all concrete implementations
+
+// gives us a concrete implementation of a type, preferably itself
+//StaticToActualType(?class, ?staticType) <-
+ //  ConcreteImplementations[?staticType] = ?class,
+ //  !ConcreteType(?staticType).
+
+
 // gives us a concrete implementation of a type, preferably itself
 StaticToActualType(?class, ?staticType) <-
-   ConcreteImplementations[?staticType] = ?class,
-   !ConcreteType(?staticType).
+   AllConcreteImplementations(?class, ?staticType),
+   !ConcreteType(?staticType) .
 
 StaticToActualType(?type, ?type) <-
    ConcreteType(?type).
+
+
+//ClassWithNoImplementation(?class) -> ClassType(?class).
+//ExistsConcreteImplementation(?type) -> Type(?type).
+
+ClassWithNoImplementation(?class) <-
+ClassModuleName("de.upb.mod2",?class), ExportedByModule(?class),
+ ClassModifier("abstract", ?class), !ExistsConcreteImplementation(?class).
+
+ExistsConcreteImplementation(?type) <-
+	ConcreteImplementations[?type]=_.
 
 
 // The key point where all the mock objects are created. Triggers all the rest.
@@ -225,8 +257,10 @@ Value:DeclaringType[?value] = ?class  <-
    ObjToMock(?class).
 
 
+
 // Similar for ReachableContext. If not in open program mode, add extra conditions.
 ReachableContext(?ctx, ?method) <-
+//FIXME: delete this in future (or at least test, if this is the problem)
 #ifndef OPEN_PROGRAMS
    // If we are not in open-program mode, only trigger logic if no main method exists
    !MainMethodDeclaration(_),
@@ -234,3 +268,46 @@ ReachableContext(?ctx, ?method) <-
 #endif
    ContextForEntryPoint(?ctx, ?method).
 
+
+
+//+Type:Id(?proxyClass:?proxyClassId),
+//+ClassType(?proxyClass),
+//+ProxyClass(?proxyClass),
+//+ClassModifier("final", ?proxyClass),
+//+DirectSuperclass[?proxyClass] = ?proxySuperclass,
+//+DirectSuperinterface(?proxyClass, ?interface) <-
+  //InterfaceType@previous(?interface),
+ // Type:Id@previous(?interface:?interfaceId),
+  //Type:Id@previous(?proxySuperclass:"java.lang.reflect.Proxy"),
+  //ClassType@previous(?proxySuperclass),
+  //?proxyClassId = "$Proxy$for$" + ?interfaceId.
+
+
+
+
+
+//create concrete for abstract
+
+DummyClass(?org,?class) -> ClassType(?org),ClassType(?class).
+//+DummyClass(?org, _) <- -ClassToManage(?org).
+
+//ClassToManage(?class) -> Type(?class).
+// +ClassToManage(?class) <- ClassWithNoImplementation(?class).
+
+
+
+//Class:Mock:Cons[?id] = ?class -> Type(?id), ClassType(?class).
+//lang:constructor(`Class:Mock:Cons).
+
+
++Type:Id(?class:?proxyClassId),
++ClassType(?class),
++DummyClass(?oclass,?class),
++ClassModifier("public", ?class),
+//+Class:Mock:Cons[(Type:Id[(?oclass)]) + "::: (MockConcrete)"] = ?class,
++DirectSuperclass[?class] = ?oclass
+<- ClassWithNoImplementation@previous(?oclass),
+    Type:Id@previous(?oclass:?interfaceId),
+    ClassType@previous(?oclass),
+    ExportedByModule@previous(?oclass),
+ ?proxyClassId = "$Proxy$for$" + ?interfaceId.

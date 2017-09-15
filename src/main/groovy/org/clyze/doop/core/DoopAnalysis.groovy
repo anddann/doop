@@ -272,6 +272,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 
         if (options.REUSECLASSESINSCENE.value) {
+            //FIXME: check invoke statement here, afterwards all bodies are gone
+            //org.clyze.doop.soot.ReuseSceneMain.main(params.toArray(new String[params.size()]))
             ClassLoader loader = this.class.classLoader
             Helper.execJava(loader, "org.clyze.doop.soot.ReuseSceneMain", params.toArray(new String[params.size()]))
 

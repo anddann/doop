@@ -271,10 +271,12 @@ public class ReuseSceneMain {
             scene = Scene.v();
         }
 
-        for (String lib : sootParameters._libraries) {
+        //Scene already exists
+
+       /* for (String lib : sootParameters._libraries) {
             System.out.println("Adding archive for resolving: " + lib);
             scene.extendSootClassPath(lib);
-        }
+        }*/
 
         if (sootParameters._main != null) {
             Options.v().set_main_class(sootParameters._main);

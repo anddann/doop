@@ -72,7 +72,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         Map<String, String> commandsEnv = initExternalCommandsEnvironment(vars)
 
         // if not empty or null
-        def analysisId = id ? validateUserSuppliedId(id) : generateId(vars)
+        def analysisId = id ? super.validateUserSuppliedId(id) : generateId(vars)
 
         def cacheId = generateCacheID(vars)
 

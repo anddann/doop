@@ -1,0 +1,351 @@
+package org.clyze.doop.core
+
+import org.apache.commons.io.FileUtils
+import org.apache.commons.io.FilenameUtils
+import org.apache.commons.logging.Log
+import org.apache.commons.logging.LogFactory
+import org.clyze.analysis.AnalysisFactory
+import org.clyze.analysis.AnalysisFamily
+import org.clyze.analysis.AnalysisOption
+import org.clyze.analysis.BooleanAnalysisOption
+import org.clyze.doop.input.DefaultInputResolutionContext
+import org.clyze.doop.input.InputResolutionContext
+import org.clyze.utils.CheckSum
+import org.clyze.utils.FileOps
+import org.clyze.utils.Helper
+
+import java.util.jar.Attributes
+import java.util.jar.JarFile
+
+/**
+ * A Factory for creating Analysis objects.
+ *
+ * All the methods invoked by newAnalysis (either directly or indirectly) could
+ * have been static helpers (e.g. entailed in the Helper class) but they are
+ * protected instance methods to allow descendants to customize all possible
+ * aspects of Analysis creation.
+ */
+class ReuseSceneDoopAnalysisFactory extends DoopAnalysisFactory {
+
+    Log logger = LogFactory.getLog(getClass())
+    static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
+    static final String HASH_ALGO = "SHA-256"
+
+    /**
+     * Creates a new analysis, verifying the correctness of its id, name, options and inputFiles using
+     * the supplied input resolution mechanism.
+     * If the supplied id is empty or null, an id will be generated automatically.
+     * Otherwise the id will be validated:
+     * - if it is valid, it will be used to identify the analysis,
+     * - if it is invalid, an exception will be thrown.
+     */
+    DoopAnalysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
+
+        def vars = processOptions(name, options, context)
+
+        super.checkAnalysis(name)
+        if (options.LB3.value)
+            super.checkLogicBlox(vars)
+
+        //init the environment used for executing commands
+        Map<String, String> commandsEnv = super.initExternalCommandsEnvironment(vars)
+
+        // if not empty or null
+        def analysisId = id ? super.validateUserSuppliedId(id) : super.generateId(vars)
+
+        def cacheId = super.generateCacheID(vars)
+
+        def outDir = super.createOutputDirectory(vars, analysisId)
+
+        def cacheDir
+
+        if (options.X_START_AFTER_FACTS.value) {
+            cacheDir = new File(options.X_START_AFTER_FACTS.value)
+            FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
+        } else {
+            cacheDir = new File("${Doop.doopCache}/$cacheId")
+            checkAppGlob(vars)
+        }
+
+        DoopAnalysis analysis
+        if (options.LB3.value) {
+            if (name != "sound-may-point-to") {
+                options.CFG_ANALYSIS.value = false
+                analysis = new ClassicAnalysis(
+                        analysisId,
+                        name.replace(File.separator, "-"),
+                        options,
+                        context,
+                        outDir,
+                        cacheDir,
+                        vars.inputFiles,
+                        vars.platformFiles,
+                        commandsEnv)
+            } else {
+                analysis = new SoundMayAnalysis(
+                        analysisId,
+                        name.replace(File.separator, "-"),
+                        options,
+                        context,
+                        outDir,
+                        cacheDir,
+                        vars.inputFiles,
+                        vars.platformFiles,
+                        commandsEnv)
+            }
+        } else {
+            options.CFG_ANALYSIS.value = false
+            analysis = new SouffleAnalysis(
+                    analysisId,
+                    name.replace(File.separator, "-"),
+                    options,
+                    context,
+                    outDir,
+                    cacheDir,
+                    vars.inputFiles,
+                    vars.platformFiles,
+                    commandsEnv)
+        }
+        logger.debug "Created new analysis"
+        return analysis
+    }
+
+    /**
+     * Creates a new analysis, verifying the correctness of its name, options and inputFiles using
+     * the default input resolution mechanism.
+     */
+    DoopAnalysis newAnalysis(AnalysisFamily family, String id, String name, Map<String, AnalysisOption> options) {
+        DefaultInputResolutionContext context = new DefaultInputResolutionContext()
+        return newAnalysis(id, name, options, context)
+    }
+
+
+    /**
+     * Generates a list of the platform library arguments for soot
+     */
+    protected List<String> platform(Map<String, AnalysisOption> options) {
+        def platformInfo = options.PLATFORM.value.toString().tokenize("_")
+        def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
+
+        def files = []
+        switch (platform) {
+            case "android":
+                if (platformInfo.size < 3)
+                    throw new RuntimeException("Invalid Android platform: $platformInfo")
+                // If the user has given a platform ending in
+                // "_fulljars", then use the "full" subdirectory of
+                // the platforms library, otherwise use the "stubs"
+                // one. This permits use of two Android system JARs
+                // side-by-side: either the stubs provided by the
+                // official Android SDK or a custom Android build.
+                if (platformInfo[2] != "stubs" && platformInfo[2] != "fulljars")
+                    throw new RuntimeException("Invalid Android platform: $platformInfo")
+                String androidLibFlavor = (platformInfo[2] == "fulljars" ? "full" : "stubs")
+                String path = "${options.PLATFORMS_LIB.value}/Android/$androidLibFlavor/Android/Sdk/platforms/android-$version"
+                switch (version) {
+                    case 7:
+                    case 15:
+                        files = ["${path}/android.jar",
+                                 "${path}/data/layoutlib.jar"]
+                        break
+                    case 16:
+                        files = ["${path}/android.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    case 17:
+                    case 18:
+                    case 19:
+                    case 20:
+                    case 21:
+                    case 22:
+                        files = ["${path}/android.jar",
+                                 "${path}/data/icu4j.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    case 23:
+                        files = ["${path}/android.jar",
+                                 "${path}/optional/org.apache.http.legacy.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    case 24:
+                    case 25:
+                        files = ["${path}/android.jar",
+                                 "${path}/android-stubs-src.jar",
+                                 "${path}/optional/org.apache.http.legacy.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    default:
+                        throw new RuntimeException("Invalid android version: $version")
+                }
+                break
+            default:
+                throw new RuntimeException("Invalid platform: $platform")
+                // FIXME: When "full" JARs are used, pick only the first
+                // one (assumed to be android.jar) or XML parsing fails.
+                if (androidLibFlavor.equals("full"))
+                    files = [files[0]]
+        }
+        return files
+    }
+
+    /**
+     * Processes the options of the analysis.
+     */
+    protected AnalysisVars processOptions(String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
+
+        logger.debug "Processing analysis options"
+
+
+        def platformFilePaths
+        def inputFiles
+        def platformFiles
+
+        if (!options.X_START_AFTER_FACTS.value || options.REUSECLASSESINSCENE.value) {
+            platformFilePaths = platform(options)
+            context.resolve()
+            platformFiles = super.resolve(platformFilePaths)
+        }
+
+        if (options.MAIN_CLASS.value) {
+            logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+        } else {
+            logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
+        }
+
+        if (options.DYNAMIC.value) {
+            List<String> dynFiles = options.DYNAMIC.value as List<String>
+            dynFiles.each { String dynFile ->
+                FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
+                logger.debug "The DYNAMIC option has been set to ${dynFile}"
+            }
+        }
+
+        if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
+            def tamFile = options.TAMIFLEX.value.toString()
+            FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+        }
+
+
+        if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
+                options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value) {
+            logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
+        }
+
+        if (options.NO_MERGE_LIBRARY_OBJECTS.value) {
+            options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value = false
+        }
+
+        if (options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value && options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
+            logger.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
+        }
+
+        if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
+            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
+            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
+        }
+
+        if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
+            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = false
+            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
+        }
+
+        if (options.REFLECTION_CLASSIC.value) {
+            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
+            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
+            options.REFLECTION.value = true
+            options.REFLECTION_SUBSTRING_ANALYSIS.value = true
+            options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value = true
+        }
+
+        if (options.TAMIFLEX.value) {
+            options.REFLECTION.value = false
+        }
+
+        if (options.MINIMAL_INFORMATION_FLOW.value) {
+            options.INFORMATION_FLOW.value = options.MINIMAL_INFORMATION_FLOW.value
+        }
+
+        if (options.NO_SSA.value) {
+            options.SSA.value = false
+        }
+
+        if (options.MUST.value) {
+            options.MUST_AFTER_MAY.value = true
+        }
+
+        if (options.X_DRY_RUN.value) {
+            options.X_STATS_NONE.value = true
+            options.X_SERVER_LOGIC.value = true
+            if (options.CACHE.value) {
+                logger.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
+            }
+        }
+
+        if (!options.REFLECTION.value) {
+            if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
+                    options.REFLECTION_SUBSTRING_ANALYSIS.value ||
+                    options.REFLECTION_CONTEXT_SENSITIVITY.value ||
+                    options.REFLECTION_HIGH_SOUNDNESS_MODE.value ||
+                    options.REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS.value ||
+                    options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
+                    options.REFLECTION_REFINED_OBJECTS.value) {
+                logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
+            } else if (options.TAMIFLEX.value) {
+                logger.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
+            } else {
+                logger.warn "\nWARNING: Handling of Java reflection is disabled!\n"
+            }
+        }
+
+        options.values().each {
+            if (it.argName && it.value && it.validValues && !(it.value in it.validValues))
+                throw new RuntimeException("Invalid value `$it.value` for option: $it.name")
+        }
+
+        options.values().findAll { it.isMandatory }.each {
+            if (!it.value) throw new RuntimeException("Missing mandatory argument: $it.name")
+        }
+
+        logger.debug "---------------"
+        AnalysisVars vars = new AnalysisVars(
+                name: name,
+                options: options,
+                inputFilePaths: null,
+                platformFilePaths: platformFilePaths,
+                inputFiles: inputFiles,
+                platformFiles: platformFiles
+        )
+        logger.debug vars
+        logger.debug "---------------"
+
+        return vars
+    }
+
+    /**
+     * Determines application classes.
+     *
+     * If an app regex is not present, it generates one.
+     */
+    protected void checkAppGlob(AnalysisVars vars) {
+        if (!vars.options.APP_REGEX.value) {
+            logger.debug "Generating app regex"
+
+            //We process only the first jar for determining the application classes
+            /*
+            Set excluded = ["*", "**"] as Set
+            analysis.jars.drop(1).each { Dependency jar ->
+                excluded += Helper.getPackages(jar.input())
+            }
+
+            Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
+            */
+            Set<String> packages = Helper.getPackages(vars.inputFiles[0])
+            vars.options.APP_REGEX.value = packages.sort().join(':')
+        }
+    }
+
+}

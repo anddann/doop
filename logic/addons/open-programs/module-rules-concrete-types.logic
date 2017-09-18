@@ -249,11 +249,11 @@ Value:Mock:Cons[(Type:Id[(?class)]) + "::: (Mock)"] = ?value,
 Value:Type[?value] = ?class,
 Value(?value),
 Value:DeclaringType[?value] = ?class  <-
-#ifndef OPEN_PROGRAMS
+//#ifndef OPEN_PROGRAMS
    // If we are not in open-program mode, only trigger logic if no main method exists
-   !MainMethodDeclaration(_),
-   !AndroidAppComponent(_),
-#endif
+//   !MainMethodDeclaration(_),
+//   !AndroidAppComponent(_),
+//#endif
    ObjToMock(?class).
 
 
@@ -261,11 +261,11 @@ Value:DeclaringType[?value] = ?class  <-
 // Similar for ReachableContext. If not in open program mode, add extra conditions.
 ReachableContext(?ctx, ?method) <-
 //FIXME: delete this in future (or at least test, if this is the problem)
-#ifndef OPEN_PROGRAMS
+//#ifndef OPEN_PROGRAMS
    // If we are not in open-program mode, only trigger logic if no main method exists
-   !MainMethodDeclaration(_),
-   !AndroidAppComponent(_),
-#endif
+//   !MainMethodDeclaration(_),
+//   !AndroidAppComponent(_),
+//#endif
    ContextForEntryPoint(?ctx, ?method).
 
 

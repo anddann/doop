@@ -224,7 +224,7 @@ if (project.hasProperty('artifactory_user')) {
             }
         }
 
-        repositories {
+     /*  repositories {
             maven {
                 credentials {
                     username artifactory_user
@@ -235,7 +235,7 @@ if (project.hasProperty('artifactory_user')) {
                         "$artifactory_contextUrl/libs-snapshot-local" :
                         "$artifactory_contextUrl/libs-release-local"
             }
-        }
+        } */
     }
 
     release {
@@ -252,4 +252,5 @@ if (project.hasProperty('artifactory_user')) {
     }
 
     afterReleaseBuild.dependsOn publish
+
 }

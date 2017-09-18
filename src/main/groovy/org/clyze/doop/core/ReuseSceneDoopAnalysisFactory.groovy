@@ -59,7 +59,7 @@ class ReuseSceneDoopAnalysisFactory extends DoopAnalysisFactory {
 
         def cacheDir
 
-        if (options.X_START_AFTER_FACTS.value) {
+        if (options.X_START_AFTER_FACTS.value && !options.REUSECLASSESINSCENE.value) {
             cacheDir = new File(options.X_START_AFTER_FACTS.value)
             FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
         } else {

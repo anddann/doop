@@ -74,8 +74,8 @@ class FactGenerator implements Runnable {
             int numRetries = 0;
             do {
                 success = true;
-                try {
-                    for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
+                try {   //FIXME: changed to method snapshot _sootClass.getMethods()
+                    for (SootMethod m : new ArrayList<>(_sootClass.getMethodsSnapshot())) {
                         Session session = new Session();
                         try {
                             generate(m, session);

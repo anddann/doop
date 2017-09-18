@@ -205,9 +205,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         } else {
-            //FIXME: why is a drop here???
             def deps = inputFiles.drop(1).collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
-           // def deps = inputFiles.collect { File f -> ["-l", f.toString()] }.flatten() as Collection<String>
 
             depArgs = (platformLibs.collect { lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
@@ -273,9 +271,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         if (options.REUSECLASSESINSCENE.value) {
             //FIXME: check invoke statement here, afterwards all bodies are gone
-            //org.clyze.doop.soot.ReuseSceneMain.main(params.toArray(new String[params.size()]))
-            ClassLoader loader = this.class.classLoader
-            Helper.execJava(loader, "org.clyze.doop.soot.ReuseSceneMain", params.toArray(new String[params.size()]))
+            sootTime = Helper.timing {org.clyze.doop.soot.ReuseSceneMain.main(params.toArray(new String[params.size()]))}
+            //ClassLoader loader = this.class.classLoader
+            //  Helper.execJava(loader, "org.clyze.doop.soot.ReuseSceneMain", params.toArray(new String[params.size()]))
 
         } else {
             sootTime = Helper.timing {

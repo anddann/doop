@@ -397,7 +397,7 @@ public class ReuseSceneMain {
             // this is necessary because it can happen that phantom methods
             // are added during resolution
             //FIXME: added case for module info (not required module-info files)
-            if(cl.resolvingLevel()<SootClass.SIGNATURES)
+            if(cl.resolvingLevel()<SootClass.SIGNATURES && (cl instanceof SootModuleInfo))
                 continue;
 
             Iterator<SootMethod> methodIt = cl.getMethods().iterator();

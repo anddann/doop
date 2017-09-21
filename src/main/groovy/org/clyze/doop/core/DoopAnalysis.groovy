@@ -9,6 +9,7 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.datalog.LBWorkspaceConnector
 import org.clyze.doop.dynamicanalysis.MemoryAnalyser
 import org.clyze.doop.input.InputResolutionContext
+import org.clyze.doop.soot.SootParameters
 import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
 import org.clyze.utils.FileOps
@@ -143,8 +144,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             touch(new File(factsDir, "ApplicationClass.facts"))
             touch(new File(factsDir, "Properties.facts"))
 
-            def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
-            def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+            def benchmark
+            def benchmarkCap
+            if (inputFiles != null) {
+                benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+                benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+            }
 
             if (options.DACAPO.value) {
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
@@ -195,6 +200,48 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     abstract protected void runTransformInput()
 
     protected void runSoot() {
+
+        if (options.REUSECLASSESINSCENE.value) {
+
+            //REMINDER: hier werden strings als parameter genutzt, da Soot mit anderem classlaoder ausgeführt wird
+            //FIXME: check invoke statement here, afterwards all bodies are gone
+
+            SootParameters sootParameters = new SootParameters();
+
+            sootParameters._mode = SootParameters.Mode.FULL;
+            sootParameters._inputs = null;
+            sootParameters._libraries = null;
+            sootParameters._outputDir = factsDir.toString();
+            sootParameters._main = null;
+            sootParameters._ssa = true;
+
+            sootParameters._android = false;
+            sootParameters._androidJars = null;
+            sootParameters._allowPhantom = true;
+            sootParameters._onlyApplicationClassesFactGen = false;
+            sootParameters.applicationClassFilter = null;
+            sootParameters.appRegex = options.APP_REGEX.value.toString();
+
+            sootParameters._runFlowdroid = false;
+            sootParameters._noFacts = false;
+            sootParameters._uniqueFacts = false;
+            sootParameters._generateJimple = false;
+
+            sootParameters._toStdout = false;
+            sootParameters._moduleMode = true;
+            sootParameters._moduleName = options.MODULENAME.value.toString();
+
+            //FIXME: here we need to set the parameters reasonable
+            //However, down there input files are used, thus this is at top
+            sootTime = Helper.timing { org.clyze.doop.soot.ReuseSceneMain.produceFacts(sootParameters) }
+            //ClassLoader loader = this.class.classLoader
+            //  Helper.execJava(loader, "org.clyze.doop.soot.ReuseSceneMain", params.toArray(new String[params.size()]))
+            logger.info "Fact generation time: ${sootTime}"
+            return
+        }
+
+
+
         Collection<String> depArgs
 
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
@@ -262,32 +309,36 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
 
-        for(int i=0; i<inputFiles.size();i++){
+        for (int i = 0; i < inputFiles.size(); i++) {
             params = params + [inputFiles[i].toString()]
         }
 
         logger.debug "Params of soot: ${params.join(' ')}"
-
-
+/*
+        // Deprecated after changes above
         if (options.REUSECLASSESINSCENE.value) {
             //FIXME: check invoke statement here, afterwards all bodies are gone
-            sootTime = Helper.timing {org.clyze.doop.soot.ReuseSceneMain.main(params.toArray(new String[params.size()]))}
+            sootTime = Helper.timing {
+                org.clyze.doop.soot.ReuseSceneMain.main(params.toArray(new String[params.size()]))
+            }
             //ClassLoader loader = this.class.classLoader
             //  Helper.execJava(loader, "org.clyze.doop.soot.ReuseSceneMain", params.toArray(new String[params.size()]))
+            logger.info "Fact generation time: ${sootTime}"
+            return
+        }*/
 
-        } else {
-            sootTime = Helper.timing {
-                //We invoke soot reflectively using a separate class-loader to be able
-                //to support multiple soot invocations in the same JVM @ server-side.
-                //TODO: Investigate whether this approach may lead to memory leaks,
-                //not only for soot but for all other Java-based tools, like jphantom
-                //or averroes.
-                //In such a case, we should invoke all Java-based tools using a
-                //separate process.
-                ClassLoader loader = sootClassLoader();
-                Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
-            }
+        sootTime = Helper.timing {
+            //We invoke soot reflectively using a separate class-loader to be able
+            //to support multiple soot invocations in the same JVM @ server-side.
+            //TODO: Investigate whether this approach may lead to memory leaks,
+            //not only for soot but for all other Java-based tools, like jphantom
+            //or averroes.
+            //In such a case, we should invoke all Java-based tools using a
+            //separate process.
+            ClassLoader loader = sootClassLoader();
+            Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
         }
+
         logger.info "Fact generation time: ${sootTime}"
     }
 

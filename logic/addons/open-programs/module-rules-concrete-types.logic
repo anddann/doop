@@ -236,7 +236,7 @@ StaticToActualType(?type, ?type) <-
 //ExistsConcreteImplementation(?type) -> Type(?type).
 
 ClassWithNoImplementation(?class) <-
-ClassModuleName("de.upb.mod2",?class), ExportedByModule(?class),
+ClassModuleName(MODULENAME,?class), ExportedByModule(?class),
  ClassModifier("abstract", ?class), !ExistsConcreteImplementation(?class).
 
 ExistsConcreteImplementation(?type) <-

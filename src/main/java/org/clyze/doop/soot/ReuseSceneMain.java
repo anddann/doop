@@ -203,7 +203,7 @@ public class ReuseSceneMain {
         }
     }
 
-    private static void produceFacts(SootParameters sootParameters) throws Exception {
+    public static void produceFacts(SootParameters sootParameters) throws Exception {
         SootMethod dummyMain = null;
 
         Options.v().set_output_dir(sootParameters._outputDir);

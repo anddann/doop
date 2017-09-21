@@ -1,6 +1,8 @@
 EntryPoint(?method) -> Method(?method).
 
 
+//preprocessor option in doop analysis familiy MODULENAME
+
 //original definition
 //ClassHasPossibleEntryPoint(?class),
 //PossibleEntryPoint(?method) <-
@@ -68,7 +70,7 @@ StaticFieldsMethods(?method) <-
 //exported and (public or static protected)
 MethodDirectAccessible(?method) <-
        Method:DeclaringType[?method] = ?class,
-       ClassModuleName("de.upb.mod2",?class),
+       ClassModuleName(MODULENAME,?class),
        ExportedByModule(?class),
        !Method:Modifier("abstract",?method),
        (
@@ -83,7 +85,7 @@ MethodDirectAccessible(?method) <-
 //method overrides/implements an exported one
 MethodInDirectAccessible(?method) <-
       Method:DeclaringType[?method] = ?class,
-      ClassModuleName("de.upb.mod2",?class),
+      ClassModuleName(MODULENAME,?class),
       Method:Modifier("public", ?method),
     //check if method implements/extends overrides method in exported class
      (
@@ -91,7 +93,7 @@ MethodInDirectAccessible(?method) <-
        MethodInterface(?method,?class,?supertype)
      ),
      ExportedByModule(?supertype),
-     ClassModuleName("de.upb.mod2",?supertype).
+     ClassModuleName(MODULENAME,?supertype).
 
 
 
@@ -119,7 +121,8 @@ MethodDeclared[?simplename, ?descriptor, ?type] = ?method <-
    Method:DeclaringType[?method] = ?type.
 
 
-ExportedMethods(?method) <- ClassModuleName("de.upb.mod2",?classes), Method:DeclaringType[?method] = ?classes.
+
+ExportedMethods(?method) <- ClassModuleName(MODULENAME,?classes), Method:DeclaringType[?method] = ?classes.
 
 MethodInModuleReachable(?method) <-
      Method:DeclaringType[?method] = ?class,

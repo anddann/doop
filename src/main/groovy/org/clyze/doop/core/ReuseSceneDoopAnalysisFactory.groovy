@@ -1,5 +1,6 @@
 package org.clyze.doop.core
 
+import javafx.scene.Scene
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
@@ -51,21 +52,15 @@ class ReuseSceneDoopAnalysisFactory extends DoopAnalysisFactory {
         Map<String, String> commandsEnv = super.initExternalCommandsEnvironment(vars)
 
         // if not empty or null
-        def analysisId = id ? super.validateUserSuppliedId(id) : super.generateId(vars)
+        def analysisId = this.generateId(vars)
 
-        def cacheId = super.generateCacheID(vars)
+        def cacheId = this.generateCacheID(vars)
 
         def outDir = super.createOutputDirectory(vars, analysisId)
 
-        def cacheDir
+        def cacheDir = new File("${Doop.doopCache}/$cacheId")
+        checkAppGlob(vars)
 
-        if (options.X_START_AFTER_FACTS.value && !options.REUSECLASSESINSCENE.value) {
-            cacheDir = new File(options.X_START_AFTER_FACTS.value)
-            FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
-        } else {
-            cacheDir = new File("${Doop.doopCache}/$cacheId")
-            checkAppGlob(vars)
-        }
 
         DoopAnalysis analysis
         if (options.LB3.value) {
@@ -110,6 +105,43 @@ class ReuseSceneDoopAnalysisFactory extends DoopAnalysisFactory {
         return analysis
     }
 
+    @Override
+    protected String generateId(AnalysisVars vars) {
+        Collection<String> idComponents = vars.options.keySet().findAll {
+            !Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION.contains(it)
+        }.collect {
+            String option -> return vars.options.get(option).toString()
+        }
+        idComponents = [vars.name] + idComponents
+        logger.debug("ID components: $idComponents")
+        def id = idComponents.join('-')
+
+        return CheckSum.checksum(id, HASH_ALGO)
+    }
+
+    @Override
+    protected String generateCacheID(AnalysisVars vars) {
+        Collection<String> idComponents = vars.options.values()
+                .findAll { it.forCacheID }
+                .collect { option -> option.toString() }
+
+        Collection<String> checksums = []
+        String userDir = System.getProperty("user.dir");
+        //FIXME: optimize checksum computation
+        //checksums += CheckSum.checksum(new File(userDir), HASH_ALGO)
+        int value = new Random().nextInt();
+        checksums += value.toString()
+        if (vars.options.TAMIFLEX.value && vars.options.TAMIFLEX.value != "dummy")
+            checksums += [CheckSum.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
+
+        idComponents = checksums + idComponents
+
+        logger.debug("Cache ID components: $idComponents")
+        def id = idComponents.join('-')
+
+        return CheckSum.checksum(id, HASH_ALGO)
+    }
+
     /**
      * Creates a new analysis, verifying the correctness of its name, options and inputFiles using
      * the default input resolution mechanism.
@@ -119,79 +151,6 @@ class ReuseSceneDoopAnalysisFactory extends DoopAnalysisFactory {
         return newAnalysis(id, name, options, context)
     }
 
-
-    /**
-     * Generates a list of the platform library arguments for soot
-     */
-    protected List<String> platform(Map<String, AnalysisOption> options) {
-        def platformInfo = options.PLATFORM.value.toString().tokenize("_")
-        def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
-
-        def files = []
-        switch (platform) {
-            case "android":
-                if (platformInfo.size < 3)
-                    throw new RuntimeException("Invalid Android platform: $platformInfo")
-                // If the user has given a platform ending in
-                // "_fulljars", then use the "full" subdirectory of
-                // the platforms library, otherwise use the "stubs"
-                // one. This permits use of two Android system JARs
-                // side-by-side: either the stubs provided by the
-                // official Android SDK or a custom Android build.
-                if (platformInfo[2] != "stubs" && platformInfo[2] != "fulljars")
-                    throw new RuntimeException("Invalid Android platform: $platformInfo")
-                String androidLibFlavor = (platformInfo[2] == "fulljars" ? "full" : "stubs")
-                String path = "${options.PLATFORMS_LIB.value}/Android/$androidLibFlavor/Android/Sdk/platforms/android-$version"
-                switch (version) {
-                    case 7:
-                    case 15:
-                        files = ["${path}/android.jar",
-                                 "${path}/data/layoutlib.jar"]
-                        break
-                    case 16:
-                        files = ["${path}/android.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    case 17:
-                    case 18:
-                    case 19:
-                    case 20:
-                    case 21:
-                    case 22:
-                        files = ["${path}/android.jar",
-                                 "${path}/data/icu4j.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    case 23:
-                        files = ["${path}/android.jar",
-                                 "${path}/optional/org.apache.http.legacy.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    case 24:
-                    case 25:
-                        files = ["${path}/android.jar",
-                                 "${path}/android-stubs-src.jar",
-                                 "${path}/optional/org.apache.http.legacy.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    default:
-                        throw new RuntimeException("Invalid android version: $version")
-                }
-                break
-            default:
-                throw new RuntimeException("Invalid platform: $platform")
-                // FIXME: When "full" JARs are used, pick only the first
-                // one (assumed to be android.jar) or XML parsing fails.
-                if (androidLibFlavor.equals("full"))
-                    files = [files[0]]
-        }
-        return files
-    }
-
     /**
      * Processes the options of the analysis.
      */
@@ -199,16 +158,6 @@ class ReuseSceneDoopAnalysisFactory extends DoopAnalysisFactory {
 
         logger.debug "Processing analysis options"
 
-
-        def platformFilePaths
-        def inputFiles
-        def platformFiles
-
-        if (!options.X_START_AFTER_FACTS.value || options.REUSECLASSESINSCENE.value) {
-            platformFilePaths = platform(options)
-            context.resolve()
-            platformFiles = super.resolve(platformFilePaths)
-        }
 
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
@@ -315,9 +264,9 @@ class ReuseSceneDoopAnalysisFactory extends DoopAnalysisFactory {
                 name: name,
                 options: options,
                 inputFilePaths: null,
-                platformFilePaths: platformFilePaths,
-                inputFiles: inputFiles,
-                platformFiles: platformFiles
+                platformFilePaths: null,
+                inputFiles: null,
+                platformFiles: null
         )
         logger.debug vars
         logger.debug "---------------"
@@ -343,7 +292,10 @@ class ReuseSceneDoopAnalysisFactory extends DoopAnalysisFactory {
 
             Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(vars.inputFiles[0])
+            Set<String> packages = new HashSet<>()
+            for(soot.SootClass kl:soot.Scene.v().getApplicationClasses()){
+                packages.add(kl.getPackageName())
+            }
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }

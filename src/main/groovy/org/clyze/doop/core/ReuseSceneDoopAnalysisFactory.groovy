@@ -126,7 +126,6 @@ class ReuseSceneDoopAnalysisFactory extends DoopAnalysisFactory {
                 .collect { option -> option.toString() }
 
         Collection<String> checksums = []
-        String userDir = System.getProperty("user.dir");
         //FIXME: optimize checksum computation
         //checksums += CheckSum.checksum(new File(userDir), HASH_ALGO)
         int value = new Random().nextInt();

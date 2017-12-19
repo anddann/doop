@@ -53,7 +53,8 @@ FieldInformation(?signature, ?fieldtype, ?class) <-
 
 FieldInformation(?signature, ?fieldtype, ?class) <-
    FieldInformation(?signature, ?fieldtype, ?staticType),
-   AllConcreteImplementations(?class, ?staticType).
+   AllConcreteImplementations(?class, ?staticType),
+   ClassHasPossibleEntryPoint(?class).
 
 FieldInformation(?signature, ?fieldConcreteType, ?class) <-
    FieldInformationOpt(?signature, ?class, ?fieldStaticType),
@@ -226,21 +227,15 @@ ConcreteImplementations[?staticType] = ?class <-
 // gives us a concrete implementation of a type, preferably itself
 StaticToActualType(?class, ?staticType) <-
    AllConcreteImplementations(?class, ?staticType),
-   !ConcreteType(?staticType) .
+   !ConcreteType(?staticType),
+   ClassHasPossibleEntryPoint(?class).
 
 StaticToActualType(?type, ?type) <-
    ConcreteType(?type).
 
 
-//ClassWithNoImplementation(?class) -> ClassType(?class).
-//ExistsConcreteImplementation(?type) -> Type(?type).
 
-ClassWithNoImplementation(?class) <-
-ClassModuleName(MODULENAME,?class), ExportedByModule(?class),
- ClassModifier("abstract", ?class), !ExistsConcreteImplementation(?class).
 
-ExistsConcreteImplementation(?type) <-
-	ConcreteImplementations[?type]=_.
 
 
 // The key point where all the mock objects are created. Triggers all the rest.
@@ -270,44 +265,5 @@ ReachableContext(?ctx, ?method) <-
 
 
 
-//+Type:Id(?proxyClass:?proxyClassId),
-//+ClassType(?proxyClass),
-//+ProxyClass(?proxyClass),
-//+ClassModifier("final", ?proxyClass),
-//+DirectSuperclass[?proxyClass] = ?proxySuperclass,
-//+DirectSuperinterface(?proxyClass, ?interface) <-
-  //InterfaceType@previous(?interface),
- // Type:Id@previous(?interface:?interfaceId),
-  //Type:Id@previous(?proxySuperclass:"java.lang.reflect.Proxy"),
-  //ClassType@previous(?proxySuperclass),
-  //?proxyClassId = "$Proxy$for$" + ?interfaceId.
 
 
-
-
-
-//create concrete for abstract
-
-DummyClass(?org,?class) -> ClassType(?org),ClassType(?class).
-//+DummyClass(?org, _) <- -ClassToManage(?org).
-
-//ClassToManage(?class) -> Type(?class).
-// +ClassToManage(?class) <- ClassWithNoImplementation(?class).
-
-
-
-//Class:Mock:Cons[?id] = ?class -> Type(?id), ClassType(?class).
-//lang:constructor(`Class:Mock:Cons).
-
-
-+Type:Id(?class:?proxyClassId),
-+ClassType(?class),
-+DummyClass(?oclass,?class),
-+ClassModifier("public", ?class),
-//+Class:Mock:Cons[(Type:Id[(?oclass)]) + "::: (MockConcrete)"] = ?class,
-+DirectSuperclass[?class] = ?oclass
-<- ClassWithNoImplementation@previous(?oclass),
-    Type:Id@previous(?oclass:?interfaceId),
-    ClassType@previous(?oclass),
-    ExportedByModule@previous(?oclass),
- ?proxyClassId = "$Proxy$for$" + ?interfaceId.

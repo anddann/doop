@@ -221,6 +221,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             sootParameters._onlyApplicationClassesFactGen = false;
             sootParameters.applicationClassFilter = null;
             sootParameters.appRegex = options.APP_REGEX.value.toString();
+            sootParameters._onlyApplicationClassesFactGen = options.ONLY_APPLICATION_CLASSES_FACT_GEN.value;
 
             sootParameters._runFlowdroid = false;
             sootParameters._noFacts = false;

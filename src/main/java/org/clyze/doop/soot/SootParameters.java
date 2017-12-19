@@ -16,7 +16,7 @@ public class SootParameters {
      boolean _android = false;
      String _androidJars = null;
      boolean _allowPhantom = false;
-     boolean _onlyApplicationClassesFactGen = false;
+     public boolean _onlyApplicationClassesFactGen = false;
      ClassFilter applicationClassFilter;
      String appRegex = "**";
      boolean _runFlowdroid = false;

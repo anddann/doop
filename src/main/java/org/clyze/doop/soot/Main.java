@@ -32,7 +32,6 @@ import static soot.DexClassProvider.classesOfDex;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
 public class Main {
-
     private static int shift(String[] args, int index) {
         if (args.length == index + 1) {
             System.err.println("error: option " + args[index] + " requires an argument");

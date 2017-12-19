@@ -224,6 +224,7 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocessIfExists("${outDir}/${name}-delta.logic", "${analysisPath}/delta.logic")
             cpp.preprocess("${outDir}/${name}.logic", "${analysisPath}/analysis.logic")
         }
+        
 
         connector.queue()
                 .timedTransaction("-- Prologue --")
@@ -244,6 +245,20 @@ class ClassicAnalysis extends DoopAnalysis {
                     .commit()
                     .transaction()
         }
+
+        //FIXME: added code for delta-logic of modules
+
+        if (options.MODULEMODE.value) {
+            cpp.preprocess("${outDir}/module-delta.logic", "${mainPath}/module/delta.logic")
+           // works but slows everything down
+            // connector.queue().addBlockFile("module-delta.logic")
+
+            //Does not work
+            connector.queue()
+                    .executeFile("module-delta.logic")
+
+        }
+
 
         /**
          * Generic file for incrementally adding addons logic from various
@@ -366,6 +381,10 @@ class ClassicAnalysis extends DoopAnalysis {
                     .commit()
                     .elapsedTime()
         }
+
+
+
+
     }
 
     @Override

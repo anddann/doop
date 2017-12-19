@@ -36,6 +36,11 @@ public class ReuseSceneMain {
         return index + 1;
     }
 
+    private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
+        sootParameters.applicationClassFilter = new GlobClassFilter(sootParameters.appRegex);
+
+        return sootParameters.applicationClassFilter.matches(klass.getName());
+    }
 
     public static void main(String[] args) {
         SootParameters sootParameters = new SootParameters();
@@ -291,6 +296,7 @@ public class ReuseSceneMain {
         }
 
 
+        classes.stream().filter((klass) -> isApplicationClass(sootParameters, klass)).forEachOrdered(SootClass::setApplicationClass);
 
         if (sootParameters._mode == SootParameters.Mode.FULL && !sootParameters._onlyApplicationClassesFactGen) {
             classes = new HashSet<>(scene.getClasses());

@@ -131,13 +131,21 @@ VarIsTaintedFromVarIndex(?base, ?ctx, ?param) <-
    MethodInvocation:Base[?invocation] = ?base,
    ActualParam[?index, ?invocation] = ?param.
 
+
+
 VarIsTaintedFromValueIndex(?ctx, ?base, ?hctx, ?value) <-
    VarIsTaintedFromVarIndex(?base, ?ctx, ?param),
    VarPointsTo(?hctx, ?value, ?ctx, ?param).
 
+
+
+
 VarIsTaintedFromValue(Var:Type[?base], ?valueIndex, ?ctx, ?base) <-
   VarIsTaintedFromValueIndex(?ctx, ?base, ?hctx, ?value),
   ArrayIndexPointsTo(_, ?valueIndex, ?hctx, ?value).
+
+
+
 
 MethodInvocationInfo(?invocation, ?type, ?ret) <-
   AnyMethodInvocationOpt(?method, ?invocation),
@@ -191,12 +199,12 @@ VarPointsTo(?hctx, ?newvalue, ?ctx, ?to) <-
 
 
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
-ValueTaintedFromValue(?newvalue, ?baseObj) <- 
+ValueTaintedFromValue(?newvalue, ?baseObj) <-
    BaseValueTaintedFromParamValue(?newvalue, ?baseObj),
    ?newvalue != ?baseObj.
 
 VarPointsTo(?hctx, ?newvalue, ?ctx, ?var)
- <- 
+ <-
    VarPointsToOpt(?ctx, ?var, ?existingvalue),
    ValueTaintedFromValue(?newvalue, ?existingvalue),
    ImmutableHContext(?hctx).
@@ -250,7 +258,7 @@ MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
    CallGraphEdge(?ctx, ?invocation, _, ?tomethod).
 
 #endif
- 
+
 /**
  * Sinks and leaks
  */
@@ -259,12 +267,15 @@ LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) <-
   LeakingSinkMethodArg(?label, ?index, ?tomethod),
   ActualParam[?index, ?invocation] = ?var.
 
-// in case method has no arguments, assume base variable 
+
+
+// in case method has no arguments, assume base variable
 LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) <-
    MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
    !FormalParam[_, ?tomethod] = _,
    LeakingSinkMethod(?label, ?tomethod),
    MethodInvocation:Base[?invocation] = ?var.
+
 
 LeakingTaintedInformation(?sourceLabel, ?destLabel, ?ctx, ?invocation, ?source) <-
   TaintedVarPointsTo(?value, ?ctx, ?var),
@@ -281,6 +292,33 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
    ImmutableHContext(?hctx),
    TypeForReturnValue(?type, ?to, ?invocation),
    Method:DeclaringType[Instruction:Method[?invocation]] = ?declaringType.
+
+
+/**
+ * Special for Tainted Fields adann
+ */
+//instance fields
+InstanceFieldPointsTo(?nhctx, ?value, ?field, ?hctx, ?basevalue),
+TaintedValueIntroduced(?declaringType, ?fId, ?type, "default", ?value)  <-
+    VarPointsTo(?hctx, ?basevalue, _, _),
+    Value:Type[?basevalue] = ?declaringType,
+    Field:DeclaringType[?field] = ?declaringType,
+    TaintedField(?field),
+    !Field:Modifier("static",?field),
+    ImmutableHContext(?nhctx),
+    Field:Id(?field:?fId),
+    Field:Type[?field]=?type.
+
+
+//static fields
+StaticFieldPointsTo(?hctx, ?value, ?field),
+TaintedValueIntroduced(?declaringType, ?fId, ?type, "default", ?value) <-
+	TaintedField(?field),
+    Field:Modifier("static",?field),
+    Field:DeclaringType[?field] = ?declaringType,
+    ImmutableHContext(?hctx),
+    Field:Id(?field:?fId),
+    Field:Type[?field]=?type.
 
 
 TaintedVarPointsTo(?value, ?ctx, ?var) <-

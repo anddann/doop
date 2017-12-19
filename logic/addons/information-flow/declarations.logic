@@ -6,6 +6,9 @@ lang:entity(`InformationLabel).
 
 InformationLabel(?x), InformationLabel:Id(?x:?id) -> string(?id).
 
+TaintedField(?field) -> Field(?field).
+
+
 TaintSourceMethod(?label, ?method) -> Method(?method), InformationLabel(?label).
 
 LeakingSinkMethodArg(?label, ?index, ?method) ->
@@ -29,3 +32,6 @@ TaintedValue(?value) -> Value(?value).
 
 ParamToRetTaintTransferMethod(?method) -> Method(?method).
 
+BaseToParamTaintTransferMethod(?method) -> Method(?method).
+ParamIndexToBaseTaintTransferMethod(?index, ?method) -> ParamIndex(?index), Method(?method).
+LeakingSinkMethod(?label, ?tomethod) -> InformationLabel(?label), Method(?tomethod).

@@ -14,55 +14,67 @@ EntryPoint(?method) -> Method(?method).
 ClassHasPossibleEntryPoint(?class),
 PossibleEntryPoint(?method) <-
   Method:DeclaringType[?method] = ?class,
-  MethodAccessible(?method),
+  MethodDirectAccessible(?method),
   !ClassModifier("private", ?class).
 
 
-//FIXME: replace module name here by the one defined in the program
-MethodAccessible(?method) <-
-    MethodDirectAccessible(?method)
-    ;
-    (
-        (
-         ReturnVarMethods(?method)
-         ;
-         StaticFieldsMethods(?method)
-        ),
 
-     MethodInDirectAccessible(?method) ).
+ClassHasPossibleEntryPoint(?supertype),
+PossibleEntryPoint(?method) <-
+  SupertypeOf(?supertype, ?class),
+  ClassModuleName(MODULENAME,?class),
+  ExportedByModule(?supertype),
+  Method:DeclaringType[?method] = ?supertype,
+  Method:Modifier("public", ?method),
+  EntryPoint(?entryMethod),
+  (
+    ReturnVarMethods(?entryMethod, ?class)
+    ;
+    StaticFieldsMethods(?entryMethod, ?class)
+    ;
+    ExportedByModule(?class)
+
+  ).
+
+
+
+ClassHasPossibleEntryPoint(?class),
+PossibleEntryPoint(?method) <-
+  Method:DeclaringType[?method] = ?class,
+  MethodInDirectAccessible(?method),
+  EntryPoint(?entryMethod),
+  (
+  	ReturnVarMethods(?entryMethod, ?class)
+         ;
+    StaticFieldsMethods(?entryMethod, ?class)
+
+  ).
+
+
 
 
 //Methods of VarPointsTo of returnVar of entrypoints
-ReturnVarMethods(?method) <-
+ReturnVarMethods(?method, ?retType) <-
 //get the return value of entrypoints
-    EntryPoint(?entryMethod),
-    ReturnVar(?var, ?entryMethod),
+    ReturnVar(?var, ?method),
     VarPointsTo(_, ?heap, _, ?var),
 // get the types
-    Value:Type[?heap] = ?retType,
-// get the methods of the return types
-    Method:DeclaringType[?method] = ?retType.
+    Value:Type[?heap] = ?retType.
+
 
 
 //get the type of the points to
 //Methods of VarPointsTo of returnVar of entrypoints
-StaticFieldsMethods(?method) <-
-//get the return value of entrypoints
-    EntryPoint(?entryMethod),
-    ReturnVar(?var, ?entryMethod),
+StaticFieldsMethods(?method, ?fieldType) <-
+    ReturnVar(?var, ?method),
     VarPointsTo(_, ?heap, _, ?var),
-// get the types
     Value:Type[?heap] = ?retType,
 // get the fields of the return types
     Field:DeclaringType[?field] = ?retType,
     // get the fields PTS
    StaticFieldPointsTo(_, ?value, ?field),
    //get their types
-    Value:Type[?value] = ?fieldType,
-    // get their methods
-    Method:DeclaringType[?method] = ?fieldType.
-
-
+    Value:Type[?value] = ?fieldType.
 
 
 
@@ -72,7 +84,7 @@ MethodDirectAccessible(?method) <-
        Method:DeclaringType[?method] = ?class,
        ClassModuleName(MODULENAME,?class),
        ExportedByModule(?class),
-       !Method:Modifier("abstract",?method),
+      // !Method:Modifier("abstract",?method),
        (
         Method:Modifier("public", ?method);
         (
@@ -92,8 +104,7 @@ MethodInDirectAccessible(?method) <-
        MethodInherited(?method,?class,?supertype);
        MethodInterface(?method,?class,?supertype)
      ),
-     ExportedByModule(?supertype),
-     ClassModuleName(MODULENAME,?supertype).
+     ExportedByModule(?supertype).
 
 
 

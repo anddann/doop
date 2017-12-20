@@ -1,22 +1,13 @@
 package org.clyze.doop.core
 
-import javafx.scene.Scene
-import org.apache.commons.io.FileUtils
-import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.analysis.AnalysisFactory
 import org.clyze.analysis.AnalysisFamily
 import org.clyze.analysis.AnalysisOption
-import org.clyze.analysis.BooleanAnalysisOption
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
-import org.clyze.utils.Helper
-
-import java.util.jar.Attributes
-import java.util.jar.JarFile
 
 /**
  * A Factory for creating Analysis objects.

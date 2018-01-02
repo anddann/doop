@@ -28,6 +28,3 @@
 
 //Type:Id@previous(?oclass:"de.upb.mod2.api.A"),
      ?proxyClassId = "$Proxy$for$" + ?interfaceId.
-
-
-

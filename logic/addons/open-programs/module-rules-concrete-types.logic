@@ -1,5 +1,6 @@
 #include "module-entry-points.logic"
 
+//default doop rules but do not create mock objects for internal type that are never returned to the outside
 
 FormalParamOpt(?index, ?method, ?formal) <- FormalParam[?index, ?method] = ?formal.
 
@@ -54,7 +55,10 @@ FieldInformation(?signature, ?fieldtype, ?class) <-
 FieldInformation(?signature, ?fieldtype, ?class) <-
    FieldInformation(?signature, ?fieldtype, ?staticType),
    AllConcreteImplementations(?class, ?staticType),
-   ClassHasPossibleEntryPoint(?class).
+    //filter out mock objects of internal type that are never returned to the outside
+   (ClassHasPossibleEntryPoint(?class);
+       ExportedByModule(?class))
+   .
 
 FieldInformation(?signature, ?fieldConcreteType, ?class) <-
    FieldInformationOpt(?signature, ?class, ?fieldStaticType),
@@ -228,7 +232,10 @@ ConcreteImplementations[?staticType] = ?class <-
 StaticToActualType(?class, ?staticType) <-
    AllConcreteImplementations(?class, ?staticType),
    !ConcreteType(?staticType),
-   ClassHasPossibleEntryPoint(?class).
+    //filter out mock objects of internal type that are never returned to the outside
+   (ClassHasPossibleEntryPoint(?class);
+        ExportedByModule(?class))
+   .
 
 StaticToActualType(?type, ?type) <-
    ConcreteType(?type).

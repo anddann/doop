@@ -199,12 +199,12 @@ VarPointsTo(?hctx, ?newvalue, ?ctx, ?to) <-
 
 
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
-ValueTaintedFromValue(?newvalue, ?baseObj) <-
+ValueTaintedFromValue(?newvalue, ?baseObj) <- 
    BaseValueTaintedFromParamValue(?newvalue, ?baseObj),
    ?newvalue != ?baseObj.
 
 VarPointsTo(?hctx, ?newvalue, ?ctx, ?var)
- <-
+ <- 
    VarPointsToOpt(?ctx, ?var, ?existingvalue),
    ValueTaintedFromValue(?newvalue, ?existingvalue),
    ImmutableHContext(?hctx).
@@ -258,7 +258,7 @@ MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
    CallGraphEdge(?ctx, ?invocation, _, ?tomethod).
 
 #endif
-
+ 
 /**
  * Sinks and leaks
  */
@@ -269,7 +269,7 @@ LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) <-
 
 
 
-// in case method has no arguments, assume base variable
+// in case method has no arguments, assume base variable 
 LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) <-
    MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
    !FormalParam[_, ?tomethod] = _,

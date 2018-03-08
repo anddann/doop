@@ -57,7 +57,7 @@ FieldInformation(?signature, ?fieldtype, ?class) <-
    AllConcreteImplementations(?class, ?staticType),
     //filter out mock objects of internal type that are never returned to the outside
    (ClassHasPossibleEntryPoint(?class);
-       ExportedByModule(?class))
+       ExportedType(?class))
    .
 
 FieldInformation(?signature, ?fieldConcreteType, ?class) <-
@@ -234,7 +234,7 @@ StaticToActualType(?class, ?staticType) <-
    !ConcreteType(?staticType),
     //filter out mock objects of internal type that are never returned to the outside
    (ClassHasPossibleEntryPoint(?class);
-        ExportedByModule(?class))
+        ExportedType(?class))
    .
 
 StaticToActualType(?type, ?type) <-

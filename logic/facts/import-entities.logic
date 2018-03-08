@@ -224,14 +224,14 @@ _ModuleRequires(?param1, ?param2) ->
 
 
 
-// ClassModuleName
+// ModuleDeclType
 
-lang:physical:storageModel[`_ClassModuleName] = "DelimitedFile".
-lang:physical:filePath[`_ClassModuleName] = "facts/ClassModuleName.facts".
-lang:physical:delimiter[`_ClassModuleName] = "\t".
-lang:physical:hasColumnNames[`_ClassModuleName] = false.
+lang:physical:storageModel[`_ModuleDeclType] = "DelimitedFile".
+lang:physical:filePath[`_ModuleDeclType] = "facts/ModuleDeclType.facts".
+lang:physical:delimiter[`_ModuleDeclType] = "\t".
+lang:physical:hasColumnNames[`_ModuleDeclType] = false.
 
-_ClassModuleName(?param1, ?param2) ->
+_ModuleDeclType(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
@@ -240,8 +240,8 @@ _ClassModuleName(?param1, ?param2) ->
 +Module(?module),
 +Type:Id(?classType:?param2),
 +ClassType(?classType),
-+ClassModuleName(?module, ?classType) <-
-  _ClassModuleName(?param1, ?param2).
++ModuleDeclType(?module, ?classType) <-
+  _ModuleDeclType(?param1, ?param2).
 
 
 

@@ -8,79 +8,107 @@ AccessibleType(?type) -> Type(?type).
 
 ClassHasPossibleEntryPoint(?class),
 PossibleEntryPoint(?method) <-
-  Method:DeclaringType[?method] = ?class,
-  MethodDirectAccessible(?method),
-  ClassModifier("public", ?class).
+  ExplicitMethod(?class, ?method).
+
+
 
 
 ClassHasPossibleEntryPoint(?class),
 PossibleEntryPoint(?method) <-
+    ImplicitMethod(?class, ?method).
+
+
+
+
+
+//method is explicitly accessible
+//exported and (public or static protected)
+ExplicitMethod(?class, ?method) <-
+       Method:DeclaringType[?method] = ?class,
+       ClassModifier("public",?class),
+       AnalyzedModule(?module),
+       ModuleDeclType(?module,?class),
+       ExportedType(?class),
+       (
+        Method:Modifier("public", ?method);
+        (
+            Method:Modifier("protected",?method),
+            Method:Modifier("static",?method)
+        )
+       ).
+
+
+
+//method overrides/implements an exported one
+
+ImplicitMethod(?class, ?method) <-
   Method:DeclaringType[?method] = ?class,
-  MethodInDirectAccessible(?method),
-  EntryPoint(?entryMethod),
-  (
-    ReturnVarMethods(?entryMethod, ?class)
-         ;
-    FieldsTypeMethods(?entryMethod, ?class)
-  ).  
+    AnalyzedModule(?module),
+
+        ModuleDeclType(?module,?class),
+        Method:Modifier("public", ?method),
+      //check if method implements/extends overrides method in exported class
+       (
+         MethodOverride(?method,?class,?supertype);
+         MethodInterface(?method,?class,?supertype)
+       ),
+       ExportedType(?supertype),
+      EntryPoint(?entryMethod),
+      (
+        ReturnVarMethods(?entryMethod, ?class)
+             ;
+        FieldsTypeMethods(?entryMethod, ?class)
+      ).
 
 
-//this one takes forever and leads to overapproximation
-// get the supertype methods of types in the module that are returned to the outside
-ClassHasPossibleEntryPoint(?supertype),
-PossibleEntryPoint(?method) <-
-  SupertypeOf(?supertype, ?retType),
+
+
+//the following three check for supertype's methods...
+//the three cases cut, otherwise we go through the complete JDK
+
+
+
+ImplicitMethod(?supertype, ?method) <-
+ SupertypeOf(?supertype, ?retType),
   !Type:null(?retType),
-  ExportedByModule(?supertype),
+  ExportedType(?supertype),
   Method:DeclaringType[?method] = ?supertype,
   Method:Modifier("public", ?method),
   ClassModifier("public",?supertype),
   EntryPoint(?entryMethod),
-  //somewhere a cut is needed, otherwise we go through the complete JDK
-  //type is returned from method defined in module
-  Method:DeclaringType[?entryMethod] = ?classInModule,
-  ClassModuleName(MODULENAME,?classInModule),
+  AnalyzedModule(?module),
   (
-    ReturnVarMethods(?entryMethod, ?retType)
+    (
+      //!! the type is returned from method that is defined IN the module !!!
+        Method:DeclaringType[?entryMethod] = ?classInModule,
+        ModuleDeclType(?module,?classInModule)
+    )
     ;
-    FieldsTypeMethods(?entryMethod, ?retType)
-  ).
+      // !!! the returned type itself is declared in the module !!!
+      ModuleDeclType(?module,?retType)
 
 
+  ),
+   (
+     ReturnVarMethods(?entryMethod, ?retType)
+     ;
+     FieldsTypeMethods(?entryMethod, ?retType)
+   ).
 
-
-// get the supertype methods of types in the module that are returned to the outside
-ClassHasPossibleEntryPoint(?supertype),
-PossibleEntryPoint(?method) <-
-  SupertypeOf(?supertype, ?retType),
-    !Type:null(?retType),
-  ExportedByModule(?supertype),
-  Method:DeclaringType[?method] = ?supertype,
-  Method:Modifier("public", ?method),
-  ClassModifier("public",?supertype),
-  EntryPoint(?entryMethod),
-  //somewhere a cut is needed, otherwise we go through the complete JDK
-  //or the returned type itself is declared in the module
-  ClassModuleName(MODULENAME,?retType),
-  (
-    ReturnVarMethods(?entryMethod, ?retType)
-    ;
-    FieldsTypeMethods(?entryMethod, ?retType)
-  ).
 
 
 //get the supertype methods of exported types of this module that do not declare methods themselves
-ClassHasPossibleEntryPoint(?supertype),
-PossibleEntryPoint(?method) <-
-  SupertypeOf(?supertype, ?retType),
-    !Type:null(?retType),
+ImplicitMethod(?supertype, ?method) <-
+ SupertypeOf(?supertype, ?retType),
+  !Type:null(?retType),
   Method:DeclaringType[?method] = ?supertype,
   ClassModifier("public", ?supertype),
   Method:Modifier("public", ?method),
-  ClassModuleName(MODULENAME,?retType),
-  ExportedByModule(?retType),
-  ExportedByModule(?supertype).
-
+  AnalyzedModule(?module),
+  ModuleDeclType(?module,?retType),
+  ExportedType(?retType),
+  ExportedType(?supertype).
+//the retType and superType are defined in the module
 
 
 
@@ -103,7 +131,7 @@ FieldsTypeMethods(?method, ?fieldType) <-
     ReturnVar(?var, ?method),
     VarPointsTo(_, ?value, _, ?var),
     Value:Type[?value] = ?retType,
-    ExportedByModule(?retType),
+    ExportedType(?retType),
 // get the fields of the return types
     Field:DeclaringType[?field] = ?retType,
     Field:Modifier("public",?field),
@@ -120,7 +148,7 @@ FieldsTypeMethods(?method, ?fieldType) <-
     ReturnVar(?var, ?method),
     VarPointsTo(?hctx, ?basevalue, _, ?var),
     Value:Type[?basevalue] = ?retType,
-    ExportedByModule(?retType),
+    ExportedType(?retType),
 // get the fields of the return types
     Field:DeclaringType[?field] = ?retType,
     Field:Modifier("public",?field),
@@ -132,46 +160,14 @@ FieldsTypeMethods(?method, ?fieldType) <-
 
 
 
-//method is directly accessible
-//exported and (public or static protected)
-MethodDirectAccessible(?method) <-
-       Method:DeclaringType[?method] = ?class,
-       ClassModuleName(MODULENAME,?class),
-       ExportedByModule(?class),
-      // !Method:Modifier("abstract",?method),
-       (
-        Method:Modifier("public", ?method);
-        (
-            Method:Modifier("protected",?method),
-            Method:Modifier("static",?method)
-        )
-       ).
 
 
-//method overrides/implements an exported one
-MethodInDirectAccessible(?method) <-
-      Method:DeclaringType[?method] = ?class,
-      ClassModuleName(MODULENAME,?class),
-      Method:Modifier("public", ?method),
-    //check if method implements/extends overrides method in exported class
-     (
-       MethodInherited(?method,?class,?supertype);
-       MethodInterface(?method,?class,?supertype)
-     ),
-     ExportedByModule(?supertype).
 
 
-//MethodInDirectAccessible(?method) <-
-//    SupertypeOf(?supertype, _),
-   // ClassModuleName(MODULENAME,?class),
- //   ExportedByModule(?supertype),
- //   Method:DeclaringType[?method] = ?supertype,
-//    Method:Modifier("public", ?method),
- //   ExportedByModule(?supertype).
 
 
 //get overriden methods
-MethodInherited(?meth, ?class, ?superClass) <-
+MethodOverride(?meth, ?class, ?superClass) <-
    Method:DeclaringType[?meth] = ?class,
    Superclass(?class, ?superClass),
    Method:Descriptor[?meth] = ?descriptor,

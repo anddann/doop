@@ -116,6 +116,9 @@ class ClassicAnalysis extends DoopAnalysis {
         if (options.MAIN_CLASS.value)
             connector.queue().addBlock("""MainClass(x) <- ClassType(x), Type:Id(x:"${options.MAIN_CLASS.value}").""")
 
+        if (options.MODULENAME.value)
+            connector.queue().addBlock("""AnalyzedModule(x) <- Module(x), Module:Id(x:"${options.MODULENAME.value}").""")
+
         connector.queue()
                 .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
                 .commit()

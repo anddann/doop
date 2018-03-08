@@ -11,7 +11,7 @@ Reachable(?method) <-
 
 ModuleReachable(?method) <-
       Method:DeclaringType[?method] = ?class,
-      ExportedByModule(?class),
+      ExportedType(?class),
       Method:Modifier("public",?method).
 
 

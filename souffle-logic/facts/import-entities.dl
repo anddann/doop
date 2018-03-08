@@ -117,13 +117,13 @@ ClassModifier(?class, ?modifier) :-
 
 
 
-// ClassModuleName
+// ModuleDeclType
 
-.decl _ClassModuleName(?class:symbol, ?module:symbol)
-.input _ClassModuleName(IO="file", filename="ClassModuleName.facts", delimiter="\t")
+.decl _ModuleDeclType(?class:symbol, ?module:symbol)
+.input _ModuleDeclType(IO="file", filename="ModuleDeclType.facts", delimiter="\t")
 
-ClassModuleName(?class, ?module) :-
-  _ClassModuleName(?class, ?module).
+ModuleDeclType(?class, ?module) :-
+  _ModuleDeclType(?class, ?module).
 
 
 

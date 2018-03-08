@@ -8,10 +8,11 @@
     ClassType@previous(?oclass),
     //for some reasons this hinders building
     // the fact is empty during execution  of delta phase
-   // ExportedByModule@previous(?oclass),
-   // _ExportedByModule@previous(?oclass),
+   // ExportedType@previous(?oclass),
+   // _ExportedType@previous(?oclass),
    //thus, we remodel the same logic here
-   ( ModuleExports@previous(MODULENAME,?packageName, "ALL"),
+   ( ModuleExports@previous(?module,?packageName, "ALL"),
+        AnalyzedModule@previous(?module),
        string:substring[?interfaceId,0,?lastPos]= ?packageName,
        string:substring[?interfaceId, ?pos, 1] = ".",
        ?lastPos > ?pos
@@ -20,7 +21,8 @@
 
 
     ClassModifier@previous("abstract", ?oclass),
-    ClassModuleName@previous(MODULENAME,?oclass),
+    ModuleDeclType@previous(?module,?oclass),
+       AnalyzedModule@previous(?module),
      (SubtypeOf@previous(?subclass, ?oclass),
         ClassType@previous(?subclass),
        ClassModifier@previous("abstract", ?subclass)

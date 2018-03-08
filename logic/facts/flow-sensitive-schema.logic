@@ -28,7 +28,7 @@ Modifier:transient[]   = ?mod -> Modifier(?mod).
 
 /// Module Stuff
 
-ClassModuleName(?module, ?classType) ->
+ModuleDeclType(?module, ?classType) ->
    Module(?module), ClassType(?classType).
 
 Modifier(?x), Modifier:Id(?x:?id) -> string(?id).
@@ -48,11 +48,11 @@ Class:PackageName[?type] = ?packageName -> Type(?type), string(?packageName).
 
 OpenedByModule(?type) <-
     Class:PackageName[?type] = ?packageName,
-    ModuleOpens(?module,?packageName, "ALL"), ClassModuleName(?module, ?type).
+    ModuleOpens(?module,?packageName, "ALL"), ModuleDeclType(?module, ?type).
 
-ExportedByModule(?type) <-
+ExportedType(?type) <-
     Class:PackageName[?type] = ?packageName,
-    ModuleExports(?module,?packageName, "ALL"), ClassModuleName(?module, ?type).
+    ModuleExports(?module,?packageName, "ALL"), ModuleDeclType(?module, ?type).
 
 
 
@@ -91,6 +91,9 @@ ApplicationClass(?ref) -> ReferenceType(?ref).
 ConcreteClass(?ref)    -> ReferenceType(?ref).
 
 MainClass(?class) -> ClassType(?class).
+
+AnalyzedModule(?module) -> Module(?module).
+
 
 
 // Common type selectors

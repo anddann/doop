@@ -23,7 +23,7 @@ public enum PredicateFile
     CLASS_MODIFIER("ClassModifier"),
 
     //FIXME: adde ModuleName
-    CLASS_MODULENAME("ClassModuleName"),
+    CLASS_MODULENAME("ModuleDeclType"),
     MODULE("Module"),
     MODULE_EXPORTS("ModuleExports"),
 

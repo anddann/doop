@@ -166,7 +166,7 @@ FieldsTypeMethods(?method, ?fieldType) <-
 
 
 
-//get overriden methods
+//get overridden methods
 MethodOverride(?meth, ?class, ?superClass) <-
    Method:DeclaringType[?meth] = ?class,
    Superclass(?class, ?superClass),

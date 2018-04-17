@@ -75,7 +75,7 @@ dependencies {
 
          //runtime, compile dependencies pulled from repositories
     //dos not work
-        runtime files("/opt/jdk-9ex/lib/jrt-fs.jar")
+        runtime files("/opt/jdk-9/lib/jrt-fs.jar")
 
 
     compile "org.clyze:clue-common:2.1.18",

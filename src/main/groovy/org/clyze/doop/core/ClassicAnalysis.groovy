@@ -315,7 +315,13 @@ class ClassicAnalysis extends DoopAnalysis {
                 if (options.MODULEMODE.value) {
                     cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/module-rules-concrete-types.logic", macros)
                     cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
-                } else {
+                }
+
+                else if (options.LIBRARYMODE.value) {
+                    cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/lib-rules-concrete-types.logic", macros)
+                    cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
+                }
+                else {
 
                     // This needs cleaning up. We are including one version by default, but distinguishing
                     // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.

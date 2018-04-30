@@ -25,7 +25,7 @@ public class SootParameters {
      boolean _generateJimple = false;
      boolean _toStdout = false;
      //FIXME: added
-     boolean _moduleMode = false;
+     public boolean _moduleMode = false;
      String _moduleName = null;
 
      public void set_mode(Mode _mode) {

@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static soot.SourceLocator.FoundFile;
+import  soot.FoundFile;
 
 class PropertyProvider {
     private Map<String, Properties> _properties;

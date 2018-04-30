@@ -96,7 +96,7 @@ dependencies {
 
     // Soot is a compile time dependency
     compile 'ext:AXMLPrinter:2.0',
-            "ca.mcgill.sable:soot-j9:3.0.0-SNAPSHOT",
+            "ca.mcgill.sable:soot-j9:4.0.0-SNAPSHOT",
             "de.tud.sse:soot-infoflow:2.0.0-SNAPSHOT",
             "de.tud.sse:soot-infoflow-android:2.0.0-SNAPSHOT"
 

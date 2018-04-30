@@ -27,9 +27,6 @@ ExplicitMethod(?class, ?method) <-
        ApplicationClass(?class),
        Method:DeclaringType[?method] = ?class,
        ClassModifier("public",?class),
-       AnalyzedModule(?module),
-       ModuleDeclType(?module,?class),
-       ExportedType(?class),
        (
         Method:Modifier("public", ?method);
         (
@@ -45,16 +42,13 @@ ExplicitMethod(?class, ?method) <-
 ImplicitMethod(?class, ?method) <-
   ApplicationClass(?class),
   Method:DeclaringType[?method] = ?class,
-    AnalyzedModule(?module),
-
-        ModuleDeclType(?module,?class),
         Method:Modifier("public", ?method),
       //check if method implements/extends overrides method in exported class
        (
          MethodOverride(?method,?class,?supertype);
          MethodInterface(?method,?class,?supertype)
        ),
-       ExportedType(?supertype),
+        ClassModifier("public",?supertype),
       EntryPoint(?entryMethod),
       (
         ReturnVarMethods(?entryMethod, ?class)
@@ -74,24 +68,10 @@ ImplicitMethod(?supertype, ?method) <-
   ApplicationClass(?retType),
  SupertypeOf(?supertype, ?retType),
   !Type:null(?retType),
-  ExportedType(?supertype),
   Method:DeclaringType[?method] = ?supertype,
   Method:Modifier("public", ?method),
   ClassModifier("public",?supertype),
   EntryPoint(?entryMethod),
-  AnalyzedModule(?module),
-  (
-    (
-      //!! the type is returned from method that is defined IN the module !!!
-        Method:DeclaringType[?entryMethod] = ?classInModule,
-        ModuleDeclType(?module,?classInModule)
-    )
-    ;
-      // !!! the returned type itself is declared in the module !!!
-      ModuleDeclType(?module,?retType)
-
-
-  ),
    (
      ReturnVarMethods(?entryMethod, ?retType)
      ;
@@ -107,11 +87,7 @@ ImplicitMethod(?supertype, ?method) <-
   !Type:null(?retType),
   Method:DeclaringType[?method] = ?supertype,
   ClassModifier("public", ?supertype),
-  Method:Modifier("public", ?method),
-  AnalyzedModule(?module),
-  ModuleDeclType(?module,?retType),
-  ExportedType(?retType),
-  ExportedType(?supertype).
+  Method:Modifier("public", ?method).
 //the retType and superType are defined in the module
 
 
@@ -135,7 +111,6 @@ FieldsTypeMethods(?method, ?fieldType) <-
     ReturnVar(?var, ?method),
     VarPointsTo(_, ?value, _, ?var),
     Value:Type[?value] = ?retType,
-    ExportedType(?retType),
 // get the fields of the return types
     Field:DeclaringType[?field] = ?retType,
     Field:Modifier("public",?field),
@@ -152,7 +127,6 @@ FieldsTypeMethods(?method, ?fieldType) <-
     ReturnVar(?var, ?method),
     VarPointsTo(?hctx, ?basevalue, _, ?var),
     Value:Type[?basevalue] = ?retType,
-    ExportedType(?retType),
 // get the fields of the return types
     Field:DeclaringType[?field] = ?retType,
     Field:Modifier("public",?field),

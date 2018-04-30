@@ -229,8 +229,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             sootParameters._generateJimple = false;
 
             sootParameters._toStdout = false;
-            sootParameters._moduleMode = true;
-            sootParameters._moduleName = options.MODULENAME.value.toString();
+            sootParameters._moduleMode =  options.MODULEMODE.value;
+            if(options.MODULENAME.value) {
+
+                sootParameters._moduleName = options.MODULENAME.value.toString();
+            }
 
             //FIXME: here we need to set the parameters reasonable
             //However, down there input files are used, thus this is at top

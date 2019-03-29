@@ -38,6 +38,7 @@ task wrapper(type: Wrapper) {
 }
 
 repositories {
+
     mavenLocal()
 
 
@@ -48,11 +49,7 @@ repositories {
     }
 
     maven {
-        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot/"
-    }
-
-    maven{
-        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release/"
+        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/swt-upb/"
     }
 
 
